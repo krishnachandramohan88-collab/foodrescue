@@ -2222,3 +2222,354 @@ document.addEventListener(
 
     }
 );
+/* =====================================================
+   FOOD STOCK MANAGEMENT
+===================================================== */
+
+let foodStock = {
+    total: 0,
+    reserved: 0,
+    delivered: 0,
+    remaining: 0,
+    unit: "meals",
+    status: "Available"
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+    const analyzeBtn =
+        document.getElementById("analyzeBtn");
+
+    const partialAcceptBtn =
+        document.getElementById("partialAcceptBtn");
+
+    const acceptAllStockBtn =
+        document.getElementById("acceptAllStockBtn");
+
+    const markDeliveredBtn =
+        document.getElementById("markDeliveredBtn");
+
+    const sendToCommunityBtn =
+        document.getElementById("sendToCommunityBtn");
+
+    if (analyzeBtn) {
+        analyzeBtn.addEventListener(
+            "click",
+            initializeFoodStock
+        );
+    }
+
+    if (partialAcceptBtn) {
+        partialAcceptBtn.addEventListener(
+            "click",
+            partialAcceptStock
+        );
+    }
+
+    if (acceptAllStockBtn) {
+        acceptAllStockBtn.addEventListener(
+            "click",
+            acceptAllStock
+        );
+    }
+
+    if (markDeliveredBtn) {
+        markDeliveredBtn.addEventListener(
+            "click",
+            markStockDelivered
+        );
+    }
+
+    if (sendToCommunityBtn) {
+        sendToCommunityBtn.addEventListener(
+            "click",
+            sendRemainingToCommunity
+        );
+    }
+});
+
+
+/* =====================================================
+   CREATE STOCK AFTER ANALYSIS
+===================================================== */
+
+function initializeFoodStock() {
+    const quantityInput =
+        document.getElementById("totalQuantity");
+
+    const unitInput =
+        document.getElementById("quantityUnit");
+
+    if (!quantityInput || !unitInput) {
+        console.error("Stock input fields not found");
+        return;
+    }
+
+    const quantity =
+        Number(quantityInput.value);
+
+    const unit =
+        unitInput.value;
+
+    if (!quantity || quantity <= 0) {
+        alert("Please enter valid food quantity.");
+        return;
+    }
+
+    foodStock = {
+        total: quantity,
+        reserved: 0,
+        delivered: 0,
+        remaining: quantity,
+        unit: unit,
+        status: "Available"
+    };
+
+    const dashboard =
+        document.getElementById("stockDashboard");
+
+    if (dashboard) {
+        dashboard.classList.remove("hidden");
+    }
+
+    updateStockDashboard();
+}
+
+
+/* =====================================================
+   NGO PARTIAL ACCEPT
+===================================================== */
+
+function partialAcceptStock() {
+    const input =
+        document.getElementById("ngoAcceptQuantity");
+
+    if (!input) {
+        return;
+    }
+
+    const acceptedQuantity =
+        Number(input.value);
+
+    if (!acceptedQuantity || acceptedQuantity <= 0) {
+        alert("Enter a valid quantity.");
+        return;
+    }
+
+    if (acceptedQuantity > foodStock.remaining) {
+        alert(
+            `Only ${foodStock.remaining} ${foodStock.unit} are available.`
+        );
+
+        return;
+    }
+
+    foodStock.reserved += acceptedQuantity;
+    foodStock.remaining -= acceptedQuantity;
+
+    input.value = "";
+
+    if (foodStock.remaining === 0) {
+        foodStock.status = "Fully Reserved";
+    } else {
+        foodStock.status = "Partially Reserved";
+    }
+
+    updateStockDashboard();
+    showRemainingStockAlert();
+}
+
+
+/* =====================================================
+   NGO ACCEPT ALL
+===================================================== */
+
+function acceptAllStock() {
+    if (foodStock.remaining <= 0) {
+        alert("No remaining food stock available.");
+        return;
+    }
+
+    foodStock.reserved += foodStock.remaining;
+    foodStock.remaining = 0;
+    foodStock.status = "Fully Reserved";
+
+    updateStockDashboard();
+    showRemainingStockAlert();
+}
+
+
+/* =====================================================
+   MARK RESERVED FOOD AS DELIVERED
+===================================================== */
+
+function markStockDelivered() {
+    if (foodStock.reserved <= 0) {
+        alert("No reserved stock available.");
+        return;
+    }
+
+    foodStock.delivered += foodStock.reserved;
+    foodStock.reserved = 0;
+
+    if (foodStock.remaining > 0) {
+        foodStock.status = "Partially Delivered";
+    } else {
+        foodStock.status = "Delivered";
+    }
+
+    updateStockDashboard();
+}
+
+
+/* =====================================================
+   SEND REMAINING FOOD TO COMMUNITY
+===================================================== */
+
+function sendRemainingToCommunity() {
+    if (foodStock.remaining <= 0) {
+        alert("No remaining food available.");
+        return;
+    }
+
+    const alertBox =
+        document.getElementById("communityStockAlert");
+
+    const alertText =
+        document.getElementById("communityAlertText");
+
+    if (alertText) {
+        alertText.textContent =
+            `${foodStock.remaining} ${foodStock.unit} of verified food are available nearby. Collect before the rescue deadline.`;
+    }
+
+    if (alertBox) {
+        alertBox.classList.remove("hidden");
+    }
+
+    foodStock.status = "Community Alert Live";
+
+    updateStockDashboard();
+}
+
+
+/* =====================================================
+   UPDATE STOCK DASHBOARD
+===================================================== */
+
+function updateStockDashboard() {
+    setText(
+        "totalStockValue",
+        `${foodStock.total} ${foodStock.unit}`
+    );
+
+    setText(
+        "reservedStockValue",
+        `${foodStock.reserved} ${foodStock.unit}`
+    );
+
+    setText(
+        "deliveredStockValue",
+        `${foodStock.delivered} ${foodStock.unit}`
+    );
+
+    setText(
+        "remainingStockValue",
+        `${foodStock.remaining} ${foodStock.unit}`
+    );
+
+    setText(
+        "stockStatus",
+        foodStock.status
+    );
+
+    const rescuedQuantity =
+        foodStock.reserved + foodStock.delivered;
+
+    const rescuedPercentage =
+        foodStock.total > 0
+            ? Math.round(
+                (rescuedQuantity / foodStock.total) * 100
+            )
+            : 0;
+
+    setText(
+        "stockProgressText",
+        `${rescuedPercentage}% rescued`
+    );
+
+    const progressBar =
+        document.getElementById("stockProgressBar");
+
+    if (progressBar) {
+        progressBar.style.width =
+            `${rescuedPercentage}%`;
+    }
+
+    const progress =
+        document.querySelector(".stock-progress");
+
+    if (progress) {
+        progress.setAttribute(
+            "aria-valuenow",
+            rescuedPercentage
+        );
+    }
+
+    const deliveredButton =
+        document.getElementById("markDeliveredBtn");
+
+    if (deliveredButton) {
+        deliveredButton.disabled =
+            foodStock.reserved <= 0;
+    }
+
+    saveStock();
+}
+
+
+/* =====================================================
+   SHOW REMAINING STOCK
+===================================================== */
+
+function showRemainingStockAlert() {
+    const alertBox =
+        document.getElementById("remainingStockAlert");
+
+    const message =
+        document.getElementById("remainingStockMessage");
+
+    if (!alertBox || !message) {
+        return;
+    }
+
+    if (foodStock.remaining > 0) {
+        alertBox.classList.remove("hidden");
+
+        message.textContent =
+            `${foodStock.remaining} ${foodStock.unit} remain. Match another NGO or issue a controlled community alert.`;
+    } else {
+        alertBox.classList.add("hidden");
+    }
+}
+
+
+/* =====================================================
+   LOCAL STORAGE
+===================================================== */
+
+function saveStock() {
+    localStorage.setItem(
+        "replateFoodStock",
+        JSON.stringify(foodStock)
+    );
+}
+
+
+function setText(elementId, value) {
+    const element =
+        document.getElementById(elementId);
+
+    if (element) {
+        element.textContent = value;
+    }
+}
