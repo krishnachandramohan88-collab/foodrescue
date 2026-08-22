@@ -491,10 +491,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     "restaurantName"
                 ),
 
-            teamMember:
-                getInputValue(
-                    "teamMember"
-                ),
+          
 
             restaurantPhone:
                 getInputValue(
