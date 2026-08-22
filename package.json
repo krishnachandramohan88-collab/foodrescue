@@ -1,0 +1,15 @@
+{
+  "name": "replate-ai",
+  "version": "1.0.0",
+  "description": "RePlate AI",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check public/app.js"
+  },
+  "author": "Team Rakshak",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
