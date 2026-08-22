@@ -3,22 +3,13 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 
+const PORT = Number(process.env.PORT) || 5000;
+const PUBLIC_DIR = path.join(__dirname, "public");
+const DATA_DIR = path.join(__dirname, "data");
+const STORE_FILE = path.join(DATA_DIR, "store.json");
 
-const PORT =
-    Number(process.env.PORT) || 5000;
-
-const PUBLIC_DIR =
-    path.join(__dirname, "public");
-
-const DATA_DIR =
-    path.join(__dirname, "data");
-
-const STORE_FILE =
-    path.join(DATA_DIR, "store.json");
-
-const NGO_RESPONSE_TIME =
-    10 * 60 * 1000;
-
+const NGO_RESPONSE_TIME = 10 * 60 * 1000;
+const MAX_REQUEST_SIZE = 20 * 1024 * 1024;
 
 const CONTENT_TYPES = {
     ".html": "text/html; charset=utf-8",
@@ -33,11 +24,6 @@ const CONTENT_TYPES = {
     ".ico": "image/x-icon"
 };
 
-
-/* =====================================================
-   VERIFIED NGO DATA
-===================================================== */
-
 const ngoDirectory = [
     {
         id: "NGO-1",
@@ -47,7 +33,6 @@ const ngoDirectory = [
         needScore: 95,
         capacity: 120
     },
-
     {
         id: "NGO-2",
         name: "Food For All Kitchen",
@@ -56,7 +41,6 @@ const ngoDirectory = [
         needScore: 78,
         capacity: 80
     },
-
     {
         id: "NGO-3",
         name: "Hope Community",
@@ -67,7 +51,6 @@ const ngoDirectory = [
     }
 ];
 
-
 const deliveryPartners = [
     "Amit Kumar",
     "Neha Singh",
@@ -75,9 +58,9 @@ const deliveryPartners = [
 ];
 
 
-/* =====================================================
+/* =========================================
    DATABASE
-===================================================== */
+========================================= */
 
 function createEmptyDatabase() {
     return {
@@ -89,60 +72,52 @@ function createEmptyDatabase() {
     };
 }
 
-
 function loadDatabase() {
     try {
-        const data =
-            fs.readFileSync(
-                STORE_FILE,
-                "utf8"
-            );
+        const saved = JSON.parse(
+            fs.readFileSync(STORE_FILE, "utf8")
+        );
 
-        return JSON.parse(data);
+        const empty = createEmptyDatabase();
 
+        for (const key of Object.keys(empty)) {
+            empty[key] = Array.isArray(saved[key])
+                ? saved[key]
+                : [];
+        }
+
+        return empty;
     } catch (error) {
         return createEmptyDatabase();
     }
 }
 
-
-let database =
-    loadDatabase();
-
+let database = loadDatabase();
 
 function saveDatabase() {
-    fs.mkdirSync(
-        DATA_DIR,
-        {
-            recursive: true
-        }
-    );
+    fs.mkdirSync(DATA_DIR, {
+        recursive: true
+    });
 
     fs.writeFileSync(
         STORE_FILE,
-        JSON.stringify(
-            database,
-            null,
-            2
-        )
+        JSON.stringify(database, null, 2)
     );
 }
 
 
-/* =====================================================
+/* =========================================
    HELPERS
-===================================================== */
+========================================= */
 
 function createId(prefix) {
-    return (
-        `${prefix}-${Date.now()}-` +
-        crypto
-            .randomBytes(2)
-            .toString("hex")
-            .toUpperCase()
-    );
-}
+    const randomPart = crypto
+        .randomBytes(2)
+        .toString("hex")
+        .toUpperCase();
 
+    return `${prefix}-${Date.now()}-${randomPart}`;
+}
 
 function createToken() {
     return crypto
@@ -151,82 +126,87 @@ function createToken() {
         .toUpperCase();
 }
 
+function normalizeFoodName(value) {
+    return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, " ");
+}
 
-function sendJSON(
-    response,
-    statusCode,
-    data
-) {
+function sendJSON(response, statusCode, data) {
     response.writeHead(statusCode, {
-        "Content-Type":
-            "application/json; charset=utf-8",
-
-        "Cache-Control":
-            "no-store"
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods":
+            "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers":
+            "Content-Type"
     });
 
-    response.end(
-        JSON.stringify(data)
-    );
+    response.end(JSON.stringify(data));
 }
-
 
 function readBody(request) {
-    return new Promise(
-        (
-            resolve,
-            reject
-        ) => {
-            let body = "";
+    return new Promise((resolve, reject) => {
+        const chunks = [];
 
-            request.on(
-                "data",
-                chunk => {
-                    body += chunk;
+        let totalSize = 0;
+        let finished = false;
 
-                    if (
-                        body.length >
-                        4000000
-                    ) {
-                        reject(
-                            new Error(
-                                "Request is too large."
-                            )
-                        );
+        request.on("data", (chunk) => {
+            if (finished) {
+                return;
+            }
 
-                        request.destroy();
-                    }
-                }
-            );
+            totalSize += chunk.length;
 
-            request.on(
-                "end",
-                () => {
-                    try {
-                        resolve(
-                            body
-                                ? JSON.parse(body)
-                                : {}
-                        );
+            if (totalSize > MAX_REQUEST_SIZE) {
+                finished = true;
 
-                    } catch (error) {
-                        reject(
-                            new Error(
-                                "Invalid JSON request."
-                            )
-                        );
-                    }
-                }
-            );
+                const error = new Error(
+                    "Request is too large. Photo must be below 10 MB."
+                );
 
-            request.on(
-                "error",
-                reject
-            );
-        }
-    );
+                error.statusCode = 413;
+
+                reject(error);
+                return;
+            }
+
+            chunks.push(chunk);
+        });
+
+        request.on("end", () => {
+            if (finished) {
+                return;
+            }
+
+            try {
+                const body = Buffer
+                    .concat(chunks)
+                    .toString("utf8");
+
+                resolve(
+                    body
+                        ? JSON.parse(body)
+                        : {}
+                );
+            } catch (error) {
+                const invalidJsonError =
+                    new Error(
+                        "Invalid JSON request."
+                    );
+
+                invalidJsonError.statusCode = 400;
+
+                reject(invalidJsonError);
+            }
+        });
+
+        request.on("error", reject);
+    });
 }
-
 
 function addNotification(
     type,
@@ -235,169 +215,105 @@ function addNotification(
     channel = "APP"
 ) {
     database.notifications.unshift({
-        id:
-            createId("NOTIFICATION"),
-
+        id: createId("NOTIFICATION"),
         type,
         receiver,
         message,
         channel,
-
-        status:
-            "SIMULATED_SENT",
-
-        createdAt:
-            new Date().toISOString()
+        status: "SIMULATED_SENT",
+        createdAt: new Date().toISOString()
     });
 
     database.notifications =
-        database.notifications.slice(
-            0,
-            100
-        );
+        database.notifications.slice(0, 100);
 }
 
 
-/* =====================================================
-   FOOD RISK ANALYSIS
-===================================================== */
+/* =========================================
+   FOOD RISK CHECK
+========================================= */
 
 function calculateRisk(data) {
     let score = 0;
 
     const reasons = [];
-
-    const hours =
-        Number(data.hours) || 0;
-
+    const hours = Number(data.hours) || 0;
     const temperature =
         Number(data.temperature) || 0;
 
-
     if (hours >= 6) {
         score += 5;
-
-        reasons.push(
-            "Long holding time"
-        );
-
+        reasons.push("Long holding time");
     } else if (hours >= 3) {
         score += 3;
-
-        reasons.push(
-            "Prompt rescue required"
-        );
+        reasons.push("Prompt rescue required");
     }
 
-
-    if (
-        data.storage ===
-        "Room temperature"
-    ) {
+    if (data.storage === "Room temperature") {
         score += 4;
-
         reasons.push(
             "Room-temperature storage"
         );
     }
 
-
     if (
-        data.storage ===
-            "Refrigerated" &&
+        data.storage === "Refrigerated" &&
         temperature > 5
     ) {
         score += 3;
-
         reasons.push(
             "Refrigeration above target"
         );
     }
 
-
-    if (
-        data.packaging === "Open"
-    ) {
+    if (data.packaging === "Open") {
         score += 2;
-
-        reasons.push(
-            "Open packaging"
-        );
+        reasons.push("Open packaging");
     }
-
 
     return {
         score,
-
         urgency:
             score >= 8
                 ? "HIGH"
                 : score >= 4
                     ? "MEDIUM"
                     : "LOW",
-
         reasons
     };
 }
 
 
-/* =====================================================
-   CREATE DELIVERY
-===================================================== */
+/* =========================================
+   DELIVERY
+========================================= */
 
-function createDelivery(
-    order,
-    allocations
-) {
+function createDelivery(order, allocations) {
     const partner =
         deliveryPartners[
             database.deliveries.length %
             deliveryPartners.length
         ];
 
-
-    const totalMeals =
-        allocations.reduce(
-            (
-                total,
-                allocation
-            ) =>
-                total +
-                allocation.quantity,
-
-            0
-        );
-
-
-    const delivery = {
-        id:
-            createId("DELIVERY"),
-
-        orderId:
-            order.id,
-
-        ngoName:
-            order.ngoName,
-
-        partner,
-
-        allocations,
-
-        pickupToken:
-            createToken(),
-
-        status:
-            "PARTNER_NOTIFIED",
-
-        createdAt:
-            new Date().toISOString()
-    };
-
-
-    database.deliveries.unshift(
-        delivery
+    const totalMeals = allocations.reduce(
+        (total, allocation) =>
+            total + allocation.quantity,
+        0
     );
 
+    const delivery = {
+        id: createId("DELIVERY"),
+        orderId: order.id,
+        ngoName: order.ngoName,
+        area: order.area,
+        partner,
+        allocations,
+        pickupToken: createToken(),
+        status: "PARTNER_NOTIFIED",
+        createdAt: new Date().toISOString()
+    };
+
+    database.deliveries.unshift(delivery);
 
     addNotification(
         "DELIVERY",
@@ -405,231 +321,181 @@ function createDelivery(
         `Pickup ${totalMeals} meals for ${order.ngoName}.`
     );
 
-
     return delivery;
 }
 
 
-/* =====================================================
-   MATCH NGO ORDER
-===================================================== */
+/* =========================================
+   NGO ORDER MATCHING
+========================================= */
 
 function matchOrder(order) {
     let required =
-        order.remainingNeed;
+        Number(order.remainingNeed) || 0;
 
     const allocations = [];
 
+    const requestedFoodName =
+        normalizeFoodName(
+            order.requestedFoodName
+        );
 
     const availableFoods =
         database.foods
-            .filter(food =>
-                food.safetyStatus ===
-                    "APPROVED" &&
-
-                food.status ===
-                    "AVAILABLE" &&
-
-                food.remainingQuantity > 0 &&
-
+            .filter((food) =>
+                food.safetyStatus === "APPROVED" &&
+                food.status === "AVAILABLE" &&
+                Number(food.remainingQuantity) > 0 &&
+                (
+                    !requestedFoodName ||
+                    normalizeFoodName(
+                        food.foodName
+                    ) === requestedFoodName
+                ) &&
                 new Date(
                     food.pickupDeadline
-                ).getTime() >
-                    Date.now()
+                ).getTime() > Date.now()
             )
-            .sort(
-                (
-                    first,
-                    second
-                ) =>
+            .sort((first, second) => {
+                if (
+                    first.id ===
+                        order.requestedFoodId &&
+                    second.id !==
+                        order.requestedFoodId
+                ) {
+                    return -1;
+                }
+
+                if (
+                    second.id ===
+                        order.requestedFoodId &&
+                    first.id !==
+                        order.requestedFoodId
+                ) {
+                    return 1;
+                }
+
+                return (
                     new Date(
                         first.pickupDeadline
                     ) -
                     new Date(
                         second.pickupDeadline
                     )
-            );
+                );
+            });
 
-
-    for (
-        const food of availableFoods
-    ) {
+    for (const food of availableFoods) {
         if (required <= 0) {
             break;
         }
 
+        const allocated = Math.min(
+            required,
+            Number(food.remainingQuantity)
+        );
 
-        const allocated =
-            Math.min(
-                required,
-                food.remainingQuantity
-            );
+        food.remainingQuantity -= allocated;
 
-
-        food.remainingQuantity -=
+        food.reservedQuantity =
+            Number(food.reservedQuantity || 0) +
             allocated;
 
-        food.reservedQuantity +=
-            allocated;
+        required -= allocated;
 
-        required -=
-            allocated;
-
-
-        if (
-            food.remainingQuantity === 0
-        ) {
-            food.status =
-                "FULLY_RESERVED";
+        if (food.remainingQuantity === 0) {
+            food.status = "FULLY_RESERVED";
         }
 
-
         allocations.push({
-            foodId:
-                food.id,
-
+            foodId: food.id,
             restaurantName:
                 food.restaurantName,
-
-            foodName:
-                food.foodName,
-
+            foodName: food.foodName,
             exactLocation:
                 food.exactLocation,
-
-            quantity:
-                allocated
+            quantity: allocated
         });
     }
 
-
     const matched =
-        order.remainingNeed -
+        Number(order.remainingNeed) -
         required;
 
-
-    order.allocatedMeals +=
+    order.allocatedMeals =
+        Number(order.allocatedMeals || 0) +
         matched;
 
-    order.remainingNeed =
-        required;
-
+    order.remainingNeed = required;
 
     if (required === 0) {
-        order.status =
-            "FULLY_MATCHED";
-
-    } else if (
-        order.allocatedMeals > 0
-    ) {
-        order.status =
-            "PARTIALLY_MATCHED";
-
+        order.status = "FULLY_MATCHED";
+    } else if (order.allocatedMeals > 0) {
+        order.status = "PARTIALLY_MATCHED";
     } else {
-        order.status =
-            "WAITING_FOR_STOCK";
+        order.status = "WAITING_FOR_STOCK";
     }
-
 
     if (allocations.length > 0) {
-        createDelivery(
-            order,
-            allocations
-        );
+        createDelivery(order, allocations);
     }
-
 
     return allocations;
 }
 
 
-/* =====================================================
-   MATCH NEW HOTEL FOOD
-===================================================== */
+/* =========================================
+   MATCH NEW FOOD WITH PENDING ORDERS
+========================================= */
 
 function matchNewFood(food) {
     const pendingOrders =
         database.orders
-            .filter(order =>
-                order.remainingNeed > 0
-            )
-            .sort(
+            .filter((order) =>
+                Number(order.remainingNeed) > 0 &&
                 (
-                    first,
-                    second
-                ) =>
-                    second.needScore -
-                        first.needScore ||
-
-                    new Date(first.createdAt) -
-                        new Date(
-                            second.createdAt
-                        )
+                    !order.requestedFoodName ||
+                    normalizeFoodName(
+                        order.requestedFoodName
+                    ) ===
+                    normalizeFoodName(
+                        food.foodName
+                    )
+                )
+            )
+            .sort((first, second) =>
+                Number(second.needScore) -
+                    Number(first.needScore) ||
+                new Date(first.createdAt) -
+                    new Date(second.createdAt)
             );
-
 
     const matches = [];
 
-
-    for (
-        const order of pendingOrders
-    ) {
-        if (
-            food.remainingQuantity <= 0
-        ) {
+    for (const order of pendingOrders) {
+        if (food.remainingQuantity <= 0) {
             break;
         }
 
-
         const before =
-            order.allocatedMeals;
-
+            Number(order.allocatedMeals);
 
         const allocations =
-            matchOrder(order)
-                .filter(
-                    allocation =>
-                        allocation.foodId ===
-                        food.id
-                );
-
+            matchOrder(order);
 
         if (
             order.allocatedMeals > before
         ) {
             matches.push({
-                orderId:
-                    order.id,
-
-                ngoName:
-                    order.ngoName,
-
+                orderId: order.id,
+                ngoName: order.ngoName,
                 allocations
             });
         }
     }
 
-
-    if (
-        food.remainingQuantity > 0
-    ) {
-        const nearbyNGOs =
-            [...ngoDirectory]
-                .sort(
-                    (
-                        first,
-                        second
-                    ) =>
-                        second.needScore -
-                            first.needScore ||
-
-                        first.distanceKm -
-                            second.distanceKm
-                );
-
-
-        food.alertStage =
-            "NGO";
+    if (food.remainingQuantity > 0) {
+        food.alertStage = "NGO";
 
         food.ngoAlertDeadline =
             new Date(
@@ -637,117 +503,90 @@ function matchNewFood(food) {
                 NGO_RESPONSE_TIME
             ).toISOString();
 
+        const nearbyNGOs =
+            [...ngoDirectory].sort(
+                (first, second) =>
+                    second.needScore -
+                        first.needScore ||
+                    first.distanceKm -
+                        second.distanceKm
+            );
 
-        nearbyNGOs.forEach(
-            ngo => {
-                addNotification(
-                    "FOOD_ALERT",
-
-                    ngo.name,
-
-                    `${food.remainingQuantity} meals of ${food.foodName} available near ${food.area}.`
-                );
-            }
-        );
+        for (const ngo of nearbyNGOs) {
+            addNotification(
+                "FOOD_ALERT",
+                ngo.name,
+                `${food.remainingQuantity} meals of ${food.foodName} available near ${food.area}.`
+            );
+        }
     }
-
 
     return matches;
 }
 
 
-/* =====================================================
-   PUBLIC SCREEN ESCALATION
-===================================================== */
+/* =========================================
+   PUBLIC ALERT
+========================================= */
 
 function checkExpiredAlerts() {
     let changed = false;
 
+    for (const food of database.foods) {
+        const alertExpired =
+            food.alertStage === "NGO" &&
+            Number(
+                food.remainingQuantity
+            ) > 0 &&
+            food.ngoAlertDeadline &&
+            Date.now() >=
+                new Date(
+                    food.ngoAlertDeadline
+                ).getTime();
 
-    database.foods.forEach(
-        food => {
-            if (
-                food.alertStage === "NGO" &&
-
-                food.remainingQuantity > 0 &&
-
-                food.ngoAlertDeadline &&
-
-                Date.now() >=
-                    new Date(
-                        food.ngoAlertDeadline
-                    ).getTime()
-            ) {
-                food.alertStage =
-                    "PUBLIC";
-
-                food.status =
-                    "PUBLIC_ALERT";
-
-
-                const alreadyExists =
-                    database.publicAlerts
-                        .some(
-                            alert =>
-                                alert.foodId ===
-                                    food.id &&
-
-                                alert.status ===
-                                    "ACTIVE"
-                        );
-
-
-                if (!alreadyExists) {
-                    const publicAlert = {
-                        id:
-                            createId("PUBLIC"),
-
-                        foodId:
-                            food.id,
-
-                        foodName:
-                            food.foodName,
-
-                        quantity:
-                            food.remainingQuantity,
-
-                        area:
-                            food.area,
-
-                        pickupDeadline:
-                            food.pickupDeadline,
-
-                        status:
-                            "ACTIVE",
-
-                        createdAt:
-                            new Date()
-                                .toISOString()
-                    };
-
-
-                    database.publicAlerts.unshift(
-                        publicAlert
-                    );
-
-
-                    addNotification(
-                        "PUBLIC_SCREEN",
-
-                        "Community Screen",
-
-                        `${publicAlert.quantity} verified meals available near ${publicAlert.area}.`,
-
-                        "SCREEN"
-                    );
-                }
-
-
-                changed = true;
-            }
+        if (!alertExpired) {
+            continue;
         }
-    );
 
+        food.alertStage = "PUBLIC";
+        food.status = "PUBLIC_ALERT";
+
+        const alreadyExists =
+            database.publicAlerts.some(
+                (alert) =>
+                    alert.foodId === food.id &&
+                    alert.status === "ACTIVE"
+            );
+
+        if (!alreadyExists) {
+            const publicAlert = {
+                id: createId("PUBLIC"),
+                foodId: food.id,
+                foodName: food.foodName,
+                quantity:
+                    food.remainingQuantity,
+                area: food.area,
+                pickupDeadline:
+                    food.pickupDeadline,
+                status: "ACTIVE",
+                createdAt:
+                    new Date().toISOString()
+            };
+
+            database.publicAlerts.unshift(
+                publicAlert
+            );
+
+            addNotification(
+                "PUBLIC_SCREEN",
+                "Community Screen",
+                `${publicAlert.quantity} verified meals available near ${publicAlert.area}.`,
+                "SCREEN"
+            );
+        }
+
+        changed = true;
+    }
 
     if (changed) {
         saveDatabase();
@@ -755,26 +594,14 @@ function checkExpiredAlerts() {
 }
 
 
-setInterval(
-    checkExpiredAlerts,
-    5000
-);
+/* =========================================
+   STATIC FILES
+========================================= */
 
-
-/* =====================================================
-   STATIC FILE
-===================================================== */
-
-function serveFile(
-    response,
-    filePath
-) {
+function serveFile(response, filePath) {
     fs.readFile(
         filePath,
-        (
-            error,
-            fileData
-        ) => {
+        (error, fileData) => {
             if (error) {
                 response.writeHead(404, {
                     "Content-Type":
@@ -788,655 +615,691 @@ function serveFile(
                 return;
             }
 
-
             const extension =
                 path
                     .extname(filePath)
                     .toLowerCase();
 
-
             response.writeHead(200, {
                 "Content-Type":
                     CONTENT_TYPES[extension] ||
                     "application/octet-stream",
-
                 "Cache-Control":
                     "no-store"
             });
-
 
             response.end(fileData);
         }
     );
 }
 
+setInterval(
+    checkExpiredAlerts,
+    5000
+);
 
-/* =====================================================
+
+/* =========================================
    SERVER
-===================================================== */
+========================================= */
 
-const server =
-    http.createServer(
-        async (
-            request,
-            response
-        ) => {
-            try {
-                const url =
-                    new URL(
-                        request.url,
-                        "http://localhost"
+const server = http.createServer(
+    async (request, response) => {
+        try {
+            const url = new URL(
+                request.url,
+                "http://localhost"
+            );
+
+            const pathname =
+                decodeURIComponent(
+                    url.pathname
+                );
+
+            if (
+                request.method === "OPTIONS"
+            ) {
+                response.writeHead(204, {
+                    "Access-Control-Allow-Origin":
+                        "*",
+                    "Access-Control-Allow-Methods":
+                        "GET, POST, OPTIONS",
+                    "Access-Control-Allow-Headers":
+                        "Content-Type",
+                    "Access-Control-Max-Age":
+                        "86400"
+                });
+
+                response.end();
+                return;
+            }
+
+
+            /* HEALTH API */
+
+            if (
+                pathname === "/api/health" &&
+                request.method === "GET"
+            ) {
+                sendJSON(response, 200, {
+                    success: true,
+                    name: "RePlate AI",
+                    mode: "DEMO",
+                    message:
+                        "RePlate AI backend is working."
+                });
+
+                return;
+            }
+
+
+            /* DASHBOARD API */
+
+            if (
+                pathname ===
+                    "/api/dashboard" &&
+                request.method === "GET"
+            ) {
+                checkExpiredAlerts();
+
+                const ngos =
+                    ngoDirectory.map(
+                        (ngo) => ({
+                            ...ngo,
+
+                            currentNeed:
+                                database.orders
+                                    .filter(
+                                        (order) =>
+                                            order.ngoId ===
+                                            ngo.id
+                                    )
+                                    .reduce(
+                                        (
+                                            total,
+                                            order
+                                        ) =>
+                                            total +
+                                            Number(
+                                                order.remainingNeed ||
+                                                0
+                                            ),
+                                        0
+                                    )
+                        })
                     );
 
-                const pathname =
-                    decodeURIComponent(
-                        url.pathname
+                sendJSON(response, 200, {
+                    success: true,
+                    foods: database.foods,
+                    orders: database.orders,
+                    notifications:
+                        database.notifications,
+                    deliveries:
+                        database.deliveries,
+                    publicAlerts:
+                        database.publicAlerts,
+                    ngos
+                });
+
+                return;
+            }
+
+
+            /* ADD FOOD API */
+
+            if (
+                pathname === "/api/food" &&
+                request.method === "POST"
+            ) {
+                const data =
+                    await readBody(request);
+
+                const quantity =
+                    Math.floor(
+                        Number(data.quantity)
                     );
-
-
-                /* =====================================
-                   HEALTH
-                ===================================== */
 
                 if (
-                    pathname ===
-                        "/api/health" &&
-                    request.method === "GET"
+                    data.safetyApproved !== true
                 ) {
-                    sendJSON(response, 200, {
-                        success: true,
-                        name: "RePlate AI",
-                        mode: "DEMO",
+                    sendJSON(response, 403, {
+                        success: false,
                         message:
-                            "RePlate AI backend is working."
+                            "Safety approval is required."
                     });
 
                     return;
                 }
 
-
-                /* =====================================
-                   DASHBOARD
-                ===================================== */
-
                 if (
-                    pathname ===
-                        "/api/dashboard" &&
-                    request.method === "GET"
+                    data.packaging === "Damaged"
                 ) {
-                    checkExpiredAlerts();
-
-                    sendJSON(response, 200, {
-                        success: true,
-                        foods:
-                            database.foods,
-                        orders:
-                            database.orders,
-                        notifications:
-                            database.notifications,
-                        deliveries:
-                            database.deliveries,
-                        publicAlerts:
-                            database.publicAlerts,
-                        ngos:
-                            ngoDirectory
+                    sendJSON(response, 403, {
+                        success: false,
+                        message:
+                            "Damaged packaging was rejected."
                     });
 
                     return;
                 }
 
-
-                /* =====================================
-                   ADD VERIFIED FOOD
-                ===================================== */
-
                 if (
-                    pathname ===
-                        "/api/food" &&
-                    request.method === "POST"
+                    !Number.isFinite(quantity) ||
+                    quantity < 1
                 ) {
-                    const data =
-                        await readBody(
-                            request
-                        );
+                    sendJSON(response, 400, {
+                        success: false,
+                        message:
+                            "Enter a valid quantity."
+                    });
 
-                    const quantity =
-                        Math.floor(
-                            Number(data.quantity)
-                        );
+                    return;
+                }
+
+                const food = {
+                    id: createId("FOOD"),
+
+                    restaurantName:
+                        data.restaurantName ||
+                        "Restaurant",
+
+                    restaurantPhone:
+                        data.restaurantPhone ||
+                        "",
+
+                    teamMember:
+                        data.teamMember ||
+                        "Staff",
+
+                    foodCategory:
+                        data.foodCategory ||
+                        "Prepared meal",
+
+                    foodName:
+                        data.foodName ||
+                        "Prepared food",
+
+                    totalQuantity:
+                        quantity,
+
+                    reservedQuantity:
+                        0,
+
+                    remainingQuantity:
+                        quantity,
+
+                    area:
+                        data.area ||
+                        "Patna",
+
+                    exactLocation:
+                        data.exactLocation ||
+                        "Restaurant counter",
+
+                    photo:
+                        data.photo || "",
+
+                    preparedAt:
+                        data.preparedAt,
+
+                    hours:
+                        Number(data.hours) || 0,
+
+                    temperature:
+                        Number(
+                            data.temperature
+                        ),
+
+                    storage:
+                        data.storage,
+
+                    packaging:
+                        data.packaging,
+
+                    rescueWindow:
+                        Number(
+                            data.rescueWindow
+                        ) || 90,
+
+                    pickupDeadline:
+                        data.pickupDeadline ||
+                        new Date(
+                            Date.now() +
+                            90 * 60 * 1000
+                        ).toISOString(),
+
+                    safetyStatus:
+                        "APPROVED",
+
+                    risk:
+                        calculateRisk(data),
+
+                    status:
+                        "AVAILABLE",
+
+                    alertStage:
+                        "MATCHING",
+
+                    createdAt:
+                        new Date().toISOString()
+                };
+
+                database.foods.unshift(food);
+
+                const matches =
+                    matchNewFood(food);
+
+                saveDatabase();
+
+                sendJSON(response, 201, {
+                    success: true,
+                    message:
+                        "Verified food added and matching completed.",
+                    food,
+                    matches
+                });
+
+                return;
+            }
 
 
-                    if (
-                        data.safetyApproved !== true
-                    ) {
-                        sendJSON(response, 403, {
-                            success: false,
-                            message:
-                                "Safety approval is required."
-                        });
+            /* NGO ORDER API */
 
-                        return;
-                    }
+            if (
+                pathname === "/api/orders" &&
+                request.method === "POST"
+            ) {
+                const data =
+                    await readBody(request);
 
+                const requiredMeals =
+                    Math.floor(
+                        Number(
+                            data.requiredMeals
+                        )
+                    );
 
-                    if (
-                        data.packaging ===
-                        "Damaged"
-                    ) {
-                        sendJSON(response, 403, {
-                            success: false,
-                            message:
-                                "Damaged packaging was rejected."
-                        });
+                const ngo =
+                    ngoDirectory.find(
+                        (item) =>
+                            item.id ===
+                            data.ngoId
+                    );
 
-                        return;
-                    }
-
-
-                    if (
-                        !Number.isFinite(quantity) ||
-                        quantity < 1
-                    ) {
-                        sendJSON(response, 400, {
-                            success: false,
-                            message:
-                                "Enter a valid quantity."
-                        });
-
-                        return;
-                    }
-
-
-                    const food = {
-                        id:
-                            createId("FOOD"),
-
-                        restaurantName:
-                            data.restaurantName ||
-                            "Restaurant",
-
-                        restaurantPhone:
-                            data.restaurantPhone ||
-                            "",
-
-                        teamMember:
-                            data.teamMember ||
-                            "Staff",
-
-                        foodCategory:
-                            data.foodCategory ||
-                            "Prepared meal",
-
-                        foodName:
-                            data.foodName ||
-                            "Prepared food",
-
-                        totalQuantity:
-                            quantity,
-
-                        reservedQuantity:
-                            0,
-
-                        remainingQuantity:
-                            quantity,
-
-                        area:
-                            data.area ||
-                            "Patna",
-
-                        exactLocation:
-                            data.exactLocation ||
-                            "Restaurant counter",
-
-                        photo:
-                            data.photo || "",
-
-                        preparedAt:
-                            data.preparedAt,
-
-                        hours:
-                            Number(data.hours) || 0,
-
-                        temperature:
+                const selectedFood =
+                    database.foods.find(
+                        (item) =>
+                            item.id ===
+                                data.foodId &&
+                            item.safetyStatus ===
+                                "APPROVED" &&
+                            item.status ===
+                                "AVAILABLE" &&
                             Number(
-                                data.temperature
-                            ),
-
-                        storage:
-                            data.storage,
-
-                        packaging:
-                            data.packaging,
-
-                        rescueWindow:
-                            Number(
-                                data.rescueWindow
-                            ) || 90,
-
-                        pickupDeadline:
-                            data.pickupDeadline ||
+                                item.remainingQuantity
+                            ) > 0 &&
                             new Date(
-                                Date.now() +
-                                90 * 60000
-                            ).toISOString(),
-
-                        safetyStatus:
-                            "APPROVED",
-
-                        risk:
-                            calculateRisk(data),
-
-                        status:
-                            "AVAILABLE",
-
-                        alertStage:
-                            "MATCHING",
-
-                        createdAt:
-                            new Date()
-                                .toISOString()
-                    };
-
-
-                    database.foods.unshift(
-                        food
+                                item.pickupDeadline
+                            ).getTime() >
+                                Date.now()
                     );
 
-
-                    const matches =
-                        matchNewFood(food);
-
-
-                    saveDatabase();
-
-
-                    sendJSON(response, 201, {
-                        success: true,
-
+                if (
+                    !ngo ||
+                    !selectedFood ||
+                    !Number.isFinite(
+                        requiredMeals
+                    ) ||
+                    requiredMeals < 1
+                ) {
+                    sendJSON(response, 400, {
+                        success: false,
                         message:
-                            "Verified food added and matching completed.",
-
-                        food,
-                        matches
+                            "Select a valid NGO, available food and meal quantity."
                     });
 
                     return;
                 }
 
+                const order = {
+                    id: createId("ORDER"),
 
-                /* =====================================
-                   CREATE NGO REQUIREMENT
-                ===================================== */
+                    ngoId: ngo.id,
+                    ngoName: ngo.name,
+                    area: ngo.area,
 
-                if (
-                    pathname ===
-                        "/api/orders" &&
-                    request.method === "POST"
-                ) {
-                    const data =
-                        await readBody(
-                            request
-                        );
+                    requestedFoodId:
+                        selectedFood.id,
 
-                    const requiredMeals =
-                        Math.floor(
-                            Number(
-                                data.requiredMeals
-                            )
-                        );
+                    requestedFoodName:
+                        selectedFood.foodName,
 
-                    const ngo =
-                        ngoDirectory.find(
-                            item =>
-                                item.id ===
-                                data.ngoId
-                        );
+                    requestedFoodCategory:
+                        selectedFood.foodCategory,
 
+                    requiredMeals,
 
-                    if (
-                        !ngo ||
-                        !Number.isFinite(
-                            requiredMeals
-                        ) ||
-                        requiredMeals < 1
-                    ) {
-                        sendJSON(response, 400, {
-                            success: false,
-                            message:
-                                "Valid NGO and meal requirement required."
-                        });
+                    allocatedMeals: 0,
 
-                        return;
-                    }
-
-
-                    const order = {
-                        id:
-                            createId("ORDER"),
-
-                        ngoId:
-                            ngo.id,
-
-                        ngoName:
-                            ngo.name,
-
+                    remainingNeed:
                         requiredMeals,
 
-                        allocatedMeals:
-                            0,
+                    needScore:
+                        ngo.needScore,
 
-                        remainingNeed:
-                            requiredMeals,
+                    status:
+                        "WAITING_FOR_STOCK",
 
-                        needScore:
-                            ngo.needScore,
+                    createdAt:
+                        new Date().toISOString()
+                };
 
-                        status:
-                            "WAITING_FOR_STOCK",
+                database.orders.unshift(
+                    order
+                );
 
-                        createdAt:
-                            new Date()
-                                .toISOString()
-                    };
+                addNotification(
+                    "NGO_REQUEST",
+                    ngo.name,
+                    `${ngo.name} requested ${requiredMeals} meals of ${selectedFood.foodName}.`
+                );
+
+                const allocations =
+                    matchOrder(order);
+
+                saveDatabase();
+
+                sendJSON(response, 201, {
+                    success: true,
+                    order,
+                    allocations,
+                    message:
+                        `${order.allocatedMeals}/${requiredMeals} meals of ${selectedFood.foodName} matched.`
+                });
+
+                return;
+            }
 
 
-                    database.orders.unshift(
-                        order
+            /* PUBLIC ALERT DEMO API */
+
+            if (
+                pathname ===
+                    "/api/demo/escalate" &&
+                request.method === "POST"
+            ) {
+                const data =
+                    await readBody(request);
+
+                const food =
+                    database.foods.find(
+                        (item) =>
+                            item.id ===
+                            data.foodId
                     );
 
-
-                    const allocations =
-                        matchOrder(order);
-
-
-                    saveDatabase();
-
-
-                    sendJSON(response, 201, {
-                        success: true,
-                        order,
-                        allocations,
-
+                if (!food) {
+                    sendJSON(response, 404, {
+                        success: false,
                         message:
-                            `${order.allocatedMeals}/${requiredMeals} meals matched.`
+                            "Food listing not found."
                     });
 
                     return;
                 }
 
-
-                /* =====================================
-                   PUBLIC SCREEN DEMO
-                ===================================== */
-
                 if (
-                    pathname ===
-                        "/api/demo/escalate" &&
-                    request.method === "POST"
+                    Number(
+                        food.remainingQuantity
+                    ) <= 0
                 ) {
-                    const data =
-                        await readBody(
-                            request
-                        );
-
-                    const food =
-                        database.foods.find(
-                            item =>
-                                item.id ===
-                                data.foodId
-                        );
-
-
-                    if (!food) {
-                        sendJSON(response, 404, {
-                            success: false,
-                            message:
-                                "Food listing not found."
-                        });
-
-                        return;
-                    }
-
-
-                    food.alertStage =
-                        "NGO";
-
-                    food.ngoAlertDeadline =
-                        new Date(
-                            Date.now() -
-                            1000
-                        ).toISOString();
-
-
-                    checkExpiredAlerts();
-
-
-                    sendJSON(response, 200, {
-                        success: true,
+                    sendJSON(response, 400, {
+                        success: false,
                         message:
-                            "Public screen alert created."
+                            "No food quantity is left for public alert."
                     });
 
                     return;
                 }
 
+                food.alertStage = "NGO";
 
-                /* =====================================
-                   COMPLETE DELIVERY WITH OTP
-                ===================================== */
+                food.ngoAlertDeadline =
+                    new Date(
+                        Date.now() - 1000
+                    ).toISOString();
 
-                if (
-                    pathname ===
-                        "/api/delivery/complete" &&
-                    request.method === "POST"
-                ) {
-                    const data =
-                        await readBody(
-                            request
-                        );
+                checkExpiredAlerts();
 
-                    const delivery =
-                        database.deliveries.find(
-                            item =>
-                                item.id ===
-                                data.deliveryId
-                        );
+                sendJSON(response, 200, {
+                    success: true,
+                    message:
+                        "Public screen alert created."
+                });
+
+                return;
+            }
 
 
-                    if (!delivery) {
-                        sendJSON(response, 404, {
-                            success: false,
-                            message:
-                                "Delivery not found."
-                        });
+            /* DELIVERY COMPLETE API */
 
-                        return;
-                    }
+            if (
+                pathname ===
+                    "/api/delivery/complete" &&
+                request.method === "POST"
+            ) {
+                const data =
+                    await readBody(request);
 
-
-                    if (
-                        String(
-                            data.pickupToken || ""
-                        ).toUpperCase() !==
-                        delivery.pickupToken
-                    ) {
-                        sendJSON(response, 403, {
-                            success: false,
-                            message:
-                                "Invalid pickup token."
-                        });
-
-                        return;
-                    }
-
-
-                    delivery.status =
-                        "DELIVERED";
-
-                    delivery.deliveredAt =
-                        new Date()
-                            .toISOString();
-
-
-                    delivery.allocations.forEach(
-                        allocation => {
-                            const food =
-                                database.foods.find(
-                                    item =>
-                                        item.id ===
-                                        allocation.foodId
-                                );
-
-
-                            if (food) {
-                                food.reservedQuantity -=
-                                    allocation.quantity;
-
-
-                                if (
-                                    food.remainingQuantity ===
-                                        0 &&
-                                    food.reservedQuantity ===
-                                        0
-                                ) {
-                                    food.status =
-                                        "CLOSED";
-                                }
-                            }
-                        }
+                const delivery =
+                    database.deliveries.find(
+                        (item) =>
+                            item.id ===
+                            data.deliveryId
                     );
 
+                if (!delivery) {
+                    sendJSON(response, 404, {
+                        success: false,
+                        message:
+                            "Delivery not found."
+                    });
 
-                    saveDatabase();
+                    return;
+                }
 
-
+                if (
+                    delivery.status ===
+                    "COMPLETED"
+                ) {
                     sendJSON(response, 200, {
                         success: true,
                         message:
-                            "OTP verified and delivery completed.",
+                            "Delivery is already completed.",
                         delivery
                     });
 
                     return;
                 }
 
-
-                /* =====================================
-                   UNKNOWN API
-                ===================================== */
-
                 if (
-                    pathname.startsWith(
-                        "/api/"
+                    String(
+                        data.pickupToken || ""
                     )
+                        .trim()
+                        .toUpperCase() !==
+                    delivery.pickupToken
                 ) {
-                    sendJSON(response, 404, {
+                    sendJSON(response, 403, {
                         success: false,
                         message:
-                            "API route not found."
+                            "Invalid pickup token."
                     });
 
                     return;
                 }
 
+                delivery.status =
+                    "COMPLETED";
 
-                /* =====================================
-                   WEBSITE FILES
-                ===================================== */
+                delivery.deliveredAt =
+                    new Date().toISOString();
 
-                const requestedFile =
-                    pathname === "/"
-                        ? "index.html"
-                        : pathname.replace(
-                            /^\/+/,
-                            ""
+                for (
+                    const allocation of
+                    delivery.allocations
+                ) {
+                    const food =
+                        database.foods.find(
+                            (item) =>
+                                item.id ===
+                                allocation.foodId
                         );
 
+                    if (!food) {
+                        continue;
+                    }
 
-                const filePath =
-                    path.resolve(
-                        PUBLIC_DIR,
-                        requestedFile
-                    );
+                    food.reservedQuantity =
+                        Math.max(
+                            0,
+                            Number(
+                                food.reservedQuantity ||
+                                0
+                            ) -
+                            allocation.quantity
+                        );
 
-
-                const indexFile =
-                    path.join(
-                        PUBLIC_DIR,
-                        "index.html"
-                    );
-
-
-                const safePath =
-                    filePath === indexFile ||
-                    filePath.startsWith(
-                        PUBLIC_DIR +
-                        path.sep
-                    );
-
-
-                if (!safePath) {
-                    response.writeHead(403, {
-                        "Content-Type":
-                            "text/plain; charset=utf-8"
-                    });
-
-                    response.end(
-                        "Access denied"
-                    );
-
-                    return;
+                    if (
+                        food.remainingQuantity ===
+                            0 &&
+                        food.reservedQuantity ===
+                            0
+                    ) {
+                        food.status = "CLOSED";
+                    }
                 }
 
+                saveDatabase();
 
-                fs.stat(
-                    filePath,
-                    (
-                        error,
-                        fileInformation
-                    ) => {
-                        if (
-                            !error &&
-                            fileInformation.isFile()
-                        ) {
-                            serveFile(
-                                response,
-                                filePath
-                            );
+                sendJSON(response, 200, {
+                    success: true,
+                    message:
+                        "OTP verified and delivery completed.",
+                    delivery
+                });
 
-                            return;
-                        }
+                return;
+            }
 
 
+            /* UNKNOWN API */
+
+            if (
+                pathname.startsWith("/api/")
+            ) {
+                sendJSON(response, 404, {
+                    success: false,
+                    message:
+                        "API route not found."
+                });
+
+                return;
+            }
+
+
+            /* WEBSITE FILES */
+
+            const requestedFile =
+                pathname === "/"
+                    ? "index.html"
+                    : pathname.replace(
+                        /^\/+/,
+                        ""
+                    );
+
+            const filePath =
+                path.resolve(
+                    PUBLIC_DIR,
+                    requestedFile
+                );
+
+            const indexFile =
+                path.join(
+                    PUBLIC_DIR,
+                    "index.html"
+                );
+
+            const safePath =
+                filePath === indexFile ||
+                filePath.startsWith(
+                    PUBLIC_DIR + path.sep
+                );
+
+            if (!safePath) {
+                response.writeHead(403, {
+                    "Content-Type":
+                        "text/plain; charset=utf-8"
+                });
+
+                response.end(
+                    "Access denied"
+                );
+
+                return;
+            }
+
+            fs.stat(
+                filePath,
+                (
+                    error,
+                    fileInformation
+                ) => {
+                    if (
+                        !error &&
+                        fileInformation.isFile()
+                    ) {
                         serveFile(
                             response,
-                            indexFile
+                            filePath
                         );
+
+                        return;
                     }
-                );
 
-            } catch (error) {
-                console.error(
-                    "Server error:",
-                    error
-                );
+                    serveFile(
+                        response,
+                        indexFile
+                    );
+                }
+            );
+        } catch (error) {
+            console.error(
+                "Server error:",
+                error
+            );
 
-                if (!response.headersSent) {
-                    sendJSON(response, 500, {
+            if (!response.headersSent) {
+                sendJSON(
+                    response,
+                    error.statusCode || 500,
+                    {
                         success: false,
                         message:
                             error.message ||
                             "Internal server error."
-                    });
-                }
+                    }
+                );
             }
         }
-    );
+    }
+);
 
 
-/* =====================================================
+/* =========================================
    START SERVER
-===================================================== */
+========================================= */
 
 server.listen(
     PORT,
@@ -1446,9 +1309,7 @@ server.listen(
             "========================================"
         );
 
-        console.log(
-            "REPLATE AI"
-        );
+        console.log("REPLATE AI");
 
         console.log(
             `Website: http://localhost:${PORT}`
