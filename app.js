@@ -1,5 +1,20 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const API_BASE = "";
+    const runningLocally = [
+        "localhost",
+        "127.0.0.1"
+    ].includes(window.location.hostname);
+
+    const runningOnBackendPort = [
+        "5000",
+        "8080"
+    ].includes(window.location.port);
+
+    const API_BASE = runningLocally
+        ? runningOnBackendPort
+            ? ""
+            : "http://localhost:5000"
+        : "https://replate-ai-production.up.railway.app";
+
 
     /* ==================================================
        ELEMENTS
@@ -10,6 +25,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const ngoOrderForm =
         document.getElementById("ngoOrderForm");
+
+    const ngoFoodSelect =
+        document.getElementById("ngoFoodSelect");
 
     const foodPhoto =
         document.getElementById("foodPhoto");
@@ -96,6 +114,13 @@ document.addEventListener("DOMContentLoaded", () => {
         ngoOrderForm.addEventListener(
             "submit",
             submitNgoOrder
+        );
+    }
+
+    if (ngoFoodSelect) {
+        ngoFoodSelect.addEventListener(
+            "change",
+            updateNgoMealLimit
         );
     }
 
@@ -196,9 +221,15 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        if (!file.type.startsWith("image/")) {
+        const allowedTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
             showToast(
-                "Please select a valid image.",
+                "Only JPG, PNG or WebP image is allowed.",
                 "error"
             );
 
@@ -261,6 +292,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     `${file.name} • Click to change`;
             }
 
+            if (resetPhotoButton) {
+                resetPhotoButton.style.display =
+                    "inline-flex";
+            }
+
             showToast(
                 "Food photo selected successfully.",
                 "success"
@@ -307,7 +343,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (photoLabel) {
             photoLabel.textContent =
-                "Choose or capture food photo";
+                "Choose or capture a food photo";
+        }
+
+        if (resetPhotoButton) {
+            resetPhotoButton.style.display =
+                "none";
         }
 
         if (showMessage) {
@@ -340,7 +381,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const result =
-                await response.json();
+                await readJsonResponse(
+                    response
+                );
 
             if (serverStatus) {
                 serverStatus.textContent =
@@ -351,6 +394,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 serverStatus.classList.add(
                     "online"
                 );
+
+                serverStatus.classList.remove(
+                    "offline"
+                );
             }
         } catch (error) {
             if (serverStatus) {
@@ -360,10 +407,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 serverStatus.classList.remove(
                     "online"
                 );
+
+                serverStatus.classList.add(
+                    "offline"
+                );
             }
 
             showToast(
-                "Backend is offline. Run node server.js",
+                runningLocally
+                    ? "Backend offline. Run node server.js"
+                    : "Online backend is unavailable.",
                 "error"
             );
         }
@@ -384,7 +437,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ];
 
         const safetyApproved =
-            safetyCheckboxes.length > 0 &&
+            safetyCheckboxes.length === 4 &&
             safetyCheckboxes.every(
                 (checkbox) =>
                     checkbox.checked
@@ -393,7 +446,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!safetyApproved) {
             showResult(
                 foodResult,
-                "Complete all mandatory safety checks.",
+                "Complete all four mandatory safety checks.",
                 "error"
             );
 
@@ -420,6 +473,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 )
             );
 
+        const temperature =
+            Number(
+                getInputValue(
+                    "temperature"
+                )
+            );
+
         if (!foodName) {
             showResult(
                 foodResult,
@@ -437,6 +497,16 @@ document.addEventListener("DOMContentLoaded", () => {
             showResult(
                 foodResult,
                 "Quantity must be at least 1 meal.",
+                "error"
+            );
+
+            return;
+        }
+
+        if (!Number.isFinite(temperature)) {
+            showResult(
+                foodResult,
+                "Enter current food temperature.",
                 "error"
             );
 
@@ -475,6 +545,30 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        const deadlineValue =
+            pickupDeadline
+                ? pickupDeadline.value
+                : "";
+
+        const deadlineDate =
+            new Date(deadlineValue);
+
+        if (
+            Number.isNaN(
+                deadlineDate.getTime()
+            ) ||
+            deadlineDate.getTime() <=
+                Date.now()
+        ) {
+            showResult(
+                foodResult,
+                "Pickup deadline must be in the future.",
+                "error"
+            );
+
+            return;
+        }
+
         const hoursSincePreparation =
             Math.max(
                 0,
@@ -490,8 +584,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 getInputValue(
                     "restaurantName"
                 ),
-
-          
 
             restaurantPhone:
                 getInputValue(
@@ -515,12 +607,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         .toFixed(2)
                 ),
 
-            temperature:
-                Number(
-                    getInputValue(
-                        "temperature"
-                    )
-                ),
+            temperature,
 
             storage:
                 getInputValue(
@@ -543,9 +630,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 ),
 
             pickupDeadline:
-                pickupDeadline
-                    ? pickupDeadline.value
-                    : "",
+                deadlineValue,
 
             rescueWindow:
                 Number(
@@ -554,7 +639,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     )
                 ),
 
-            // NGO alert के लिए photo backend में जाएगी
             photo:
                 uploadedPhoto,
 
@@ -593,7 +677,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
             const result =
-                await response.json();
+                await readJsonResponse(
+                    response
+                );
 
             if (!response.ok) {
                 throw new Error(
@@ -616,6 +702,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             resetFoodForm();
             await loadDashboard();
+
         } catch (error) {
             showResult(
                 foodResult,
@@ -627,6 +714,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 error.message,
                 "error"
             );
+
         } finally {
             setButtonLoading(
                 submitButton,
@@ -644,7 +732,14 @@ document.addEventListener("DOMContentLoaded", () => {
         event.preventDefault();
 
         const ngoId =
-            getInputValue("ngoSelect");
+            getInputValue(
+                "ngoSelect"
+            );
+
+        const foodId =
+            getInputValue(
+                "ngoFoodSelect"
+            );
 
         const requiredMeals =
             Number(
@@ -663,8 +758,20 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        if (!foodId) {
+            showResult(
+                ngoOrderResult,
+                "Select the food required by the NGO.",
+                "error"
+            );
+
+            return;
+        }
+
         if (
-            !Number.isFinite(requiredMeals) ||
+            !Number.isFinite(
+                requiredMeals
+            ) ||
             requiredMeals < 1
         ) {
             showResult(
@@ -702,13 +809,16 @@ document.addEventListener("DOMContentLoaded", () => {
                         body:
                             JSON.stringify({
                                 ngoId,
+                                foodId,
                                 requiredMeals
                             })
                     }
                 );
 
             const result =
-                await response.json();
+                await readJsonResponse(
+                    response
+                );
 
             if (!response.ok) {
                 throw new Error(
@@ -720,10 +830,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const order =
                 result.order;
 
+            const requestedFoodName =
+                order.requestedFoodName ||
+                "selected food";
+
             const message =
                 Number(order.remainingNeed) > 0
-                    ? `${order.allocatedMeals} meals matched. ${order.remainingNeed} meals pending for future hotel stock.`
-                    : `${order.allocatedMeals} meals completely matched.`;
+                    ? `${order.allocatedMeals} meals of ${requestedFoodName} matched. ${order.remainingNeed} meals pending for the same food.`
+                    : `${order.allocatedMeals} meals of ${requestedFoodName} completely matched.`;
 
             showResult(
                 ngoOrderResult,
@@ -746,7 +860,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     "";
             }
 
+            if (ngoFoodSelect) {
+                ngoFoodSelect.value =
+                    "";
+            }
+
             await loadDashboard();
+
         } catch (error) {
             showResult(
                 ngoOrderResult,
@@ -758,6 +878,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 error.message,
                 "error"
             );
+
         } finally {
             setButtonLoading(
                 submitButton,
@@ -814,7 +935,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
             const result =
-                await response.json();
+                await readJsonResponse(
+                    response
+                );
 
             if (!response.ok) {
                 throw new Error(
@@ -830,11 +953,13 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             await loadDashboard();
+
         } catch (error) {
             showToast(
                 error.message,
                 "error"
             );
+
         } finally {
             setButtonLoading(
                 escalateButton,
@@ -867,6 +992,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 "error"
             );
 
+            tokenInput?.focus();
             return;
         }
 
@@ -891,7 +1017,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
             const result =
-                await response.json();
+                await readJsonResponse(
+                    response
+                );
 
             if (!response.ok) {
                 throw new Error(
@@ -907,6 +1035,7 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             await loadDashboard();
+
         } catch (error) {
             showToast(
                 error.message,
@@ -930,19 +1059,35 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 );
 
+            const data =
+                await readJsonResponse(
+                    response
+                );
+
             if (!response.ok) {
                 throw new Error(
+                    data.message ||
                     "Dashboard data unavailable."
                 );
             }
 
-            const data =
-                await response.json();
-
             renderMetrics(data);
-            renderNgoOptions(data.ngos || []);
-            renderFoodList(data.foods || []);
-            renderOrderList(data.orders || []);
+
+            renderNgoOptions(
+                data.ngos || []
+            );
+
+            renderNgoFoodOptions(
+                data.foods || []
+            );
+
+            renderFoodList(
+                data.foods || []
+            );
+
+            renderOrderList(
+                data.orders || []
+            );
 
             renderDeliveryList(
                 data.deliveries || []
@@ -967,7 +1112,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 serverStatus.classList.add(
                     "online"
                 );
+
+                serverStatus.classList.remove(
+                    "offline"
+                );
             }
+
         } catch (error) {
             console.error(error);
 
@@ -977,6 +1127,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 serverStatus.classList.remove(
                     "online"
+                );
+
+                serverStatus.classList.add(
+                    "offline"
                 );
             }
         }
@@ -1011,14 +1165,19 @@ document.addEventListener("DOMContentLoaded", () => {
         const activeDeliveries =
             (data.deliveries || []).filter(
                 (delivery) =>
-                    delivery.status !==
-                    "COMPLETED"
+                    ![
+                        "COMPLETED",
+                        "DELIVERED"
+                    ].includes(
+                        delivery.status
+                    )
             ).length;
 
         const publicAlerts =
             (data.publicAlerts || []).filter(
                 (alert) =>
-                    alert.status !== "CLOSED"
+                    alert.status !==
+                    "CLOSED"
             ).length;
 
         setText(
@@ -1073,32 +1232,169 @@ document.addEventListener("DOMContentLoaded", () => {
                 ngo.id;
 
             option.textContent =
-                `${ngo.name} • Need ${ngo.currentNeed} meals • ${ngo.area}`;
+                `${ngo.name} • Need ${Number(
+                    ngo.currentNeed || 0
+                )} meals • ${ngo.area}`;
 
             ngoSelect.appendChild(
                 option
             );
         });
 
-        const valueExists = [
-            ...ngoSelect.options
-        ].some(
-            (option) =>
-                option.value === oldValue
+        restoreSelectValue(
+            ngoSelect,
+            oldValue
+        );
+    }
+
+
+    /* ==================================================
+       NGO FOOD OPTIONS
+    ================================================== */
+
+    function renderNgoFoodOptions(foods) {
+        if (!ngoFoodSelect) {
+            return;
+        }
+
+        const oldValue =
+            ngoFoodSelect.value;
+
+        ngoFoodSelect.innerHTML =
+            '<option value="">Select required food</option>';
+
+        const availableFoods =
+            foods.filter(
+                (food) =>
+                    Number(
+                        food.remainingQuantity
+                    ) > 0 &&
+
+                    food.safetyStatus ===
+                        "APPROVED" &&
+
+                    food.status ===
+                        "AVAILABLE" &&
+
+                    new Date(
+                        food.pickupDeadline
+                    ).getTime() >
+                        Date.now()
+            );
+
+        if (!availableFoods.length) {
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+            option.value = "";
+            option.disabled = true;
+
+            option.textContent =
+                "No verified food currently available";
+
+            ngoFoodSelect.appendChild(
+                option
+            );
+
+            ngoFoodSelect.disabled =
+                true;
+
+            updateNgoMealLimit();
+            return;
+        }
+
+        ngoFoodSelect.disabled =
+            false;
+
+        availableFoods
+            .sort(
+                (
+                    first,
+                    second
+                ) =>
+                    new Date(
+                        first.pickupDeadline
+                    ) -
+                    new Date(
+                        second.pickupDeadline
+                    )
+            )
+            .forEach((food) => {
+                const option =
+                    document.createElement(
+                        "option"
+                    );
+
+                option.value =
+                    food.id;
+
+                option.dataset.available =
+                    String(
+                        food.remainingQuantity
+                    );
+
+                option.textContent =
+                    `${food.foodName} • ` +
+                    `${food.remainingQuantity} meals • ` +
+                    `${food.area}`;
+
+                ngoFoodSelect.appendChild(
+                    option
+                );
+            });
+
+        restoreSelectValue(
+            ngoFoodSelect,
+            oldValue
         );
 
-        if (valueExists) {
-            ngoSelect.value =
-                oldValue;
+        updateNgoMealLimit();
+    }
+
+
+    function updateNgoMealLimit() {
+        const requiredMealsInput =
+            document.getElementById(
+                "requiredMeals"
+            );
+
+        if (!requiredMealsInput) {
+            return;
+        }
+
+        const selectedOption =
+            ngoFoodSelect
+                ? ngoFoodSelect.options[
+                    ngoFoodSelect.selectedIndex
+                ]
+                : null;
+
+        const available =
+            Number(
+                selectedOption
+                    ?.dataset
+                    .available || 0
+            );
+
+        if (available > 0) {
+            requiredMealsInput.placeholder =
+                `Available now: ${available}`;
+        } else {
+            requiredMealsInput.placeholder =
+                "Select food first";
         }
     }
 
 
     /* ==================================================
-       ESCALATION OPTIONS
+       COMMUNITY ESCALATION OPTIONS
     ================================================== */
 
-    function renderEscalationOptions(foods) {
+    function renderEscalationOptions(
+        foods
+    ) {
         if (!escalateFoodSelect) {
             return;
         }
@@ -1115,7 +1411,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     Number(
                         food.remainingQuantity
                     ) > 0 &&
-                    food.status !== "CLOSED"
+
+                    food.status ===
+                        "AVAILABLE"
             )
             .forEach((food) => {
                 const option =
@@ -1127,30 +1425,23 @@ document.addEventListener("DOMContentLoaded", () => {
                     food.id;
 
                 option.textContent =
-                    `${food.foodName} • ${food.remainingQuantity} meals`;
+                    `${food.foodName} • ` +
+                    `${food.remainingQuantity} meals`;
 
                 escalateFoodSelect.appendChild(
                     option
                 );
             });
 
-        const valueExists = [
-            ...escalateFoodSelect.options
-        ].some(
-            (option) =>
-                option.value === oldValue
+        restoreSelectValue(
+            escalateFoodSelect,
+            oldValue
         );
-
-        if (valueExists) {
-            escalateFoodSelect.value =
-                oldValue;
-        }
     }
 
 
     /* ==================================================
-       LIVE STOCK
-       ONLY FOOD NAME AND QUANTITY
+       LIVE FOOD STOCK
     ================================================== */
 
     function renderFoodList(foods) {
@@ -1181,18 +1472,26 @@ document.addEventListener("DOMContentLoaded", () => {
                     );
 
                 const available =
-                    quantity > 0;
+                    quantity > 0 &&
+                    food.status !==
+                        "CLOSED";
 
                 return `
                     <article class="content-card">
+
                         <div class="content-card-heading">
+
                             <div>
                                 <h3>
-                                    ${escapeHtml(food.foodName)}
+                                    ${escapeHtml(
+                                        food.foodName
+                                    )}
                                 </h3>
 
                                 <p>
-                                    Available food stock
+                                    ${escapeHtml(
+                                        food.area
+                                    )}
                                 </p>
                             </div>
 
@@ -1201,25 +1500,52 @@ document.addEventListener("DOMContentLoaded", () => {
                                     ? "status-badge"
                                     : "closed-badge"
                             }">
+
                                 ${
                                     available
-                                        ? "AVAILABLE"
+                                        ? escapeHtml(
+                                            food.status
+                                        )
                                         : "CLOSED"
                                 }
+
                             </span>
+
                         </div>
+
 
                         <div class="detail-grid">
+
                             <p>
-                                <strong>Food Name:</strong>
-                                ${escapeHtml(food.foodName)}
+                                <strong>
+                                    Food Name:
+                                </strong>
+
+                                ${escapeHtml(
+                                    food.foodName
+                                )}
                             </p>
 
                             <p>
-                                <strong>Quantity:</strong>
+                                <strong>
+                                    Available:
+                                </strong>
+
                                 ${quantity} meals
                             </p>
+
+                            <p>
+                                <strong>
+                                    Deadline:
+                                </strong>
+
+                                ${formatDate(
+                                    food.pickupDeadline
+                                )}
+                            </p>
+
                         </div>
+
                     </article>
                 `;
             }).join("");
@@ -1259,50 +1585,97 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 return `
                     <article class="content-card">
+
                         <div class="content-card-heading">
+
                             <div>
+
                                 <h3>
-                                    ${escapeHtml(order.ngoName)}
+                                    ${escapeHtml(
+                                        order.ngoName
+                                    )}
                                 </h3>
 
                                 <p>
-                                    ${escapeHtml(order.area)}
+                                    ${escapeHtml(
+                                        order.area
+                                    )}
                                 </p>
+
+                                <p>
+                                    <strong>
+                                        Food:
+                                    </strong>
+
+                                    ${escapeHtml(
+                                        order.requestedFoodName ||
+                                        "Any available food"
+                                    )}
+                                </p>
+
                             </div>
+
 
                             <span class="${
                                 pending
                                     ? "warning-badge"
                                     : "status-badge"
                             }">
-                                ${escapeHtml(order.status)}
+
+                                ${escapeHtml(
+                                    order.status
+                                )}
+
                             </span>
+
                         </div>
+
 
                         <div class="detail-grid">
+
                             <p>
-                                <strong>Required:</strong>
-                                ${order.requiredMeals} meals
+                                <strong>
+                                    Required:
+                                </strong>
+
+                                ${Number(
+                                    order.requiredMeals || 0
+                                )} meals
                             </p>
 
                             <p>
-                                <strong>Matched:</strong>
-                                ${order.allocatedMeals} meals
+                                <strong>
+                                    Matched:
+                                </strong>
+
+                                ${Number(
+                                    order.allocatedMeals || 0
+                                )} meals
                             </p>
 
                             <p>
-                                <strong>Pending:</strong>
-                                ${order.remainingNeed} meals
+                                <strong>
+                                    Pending:
+                                </strong>
+
+                                ${Number(
+                                    order.remainingNeed || 0
+                                )} meals
                             </p>
+
                         </div>
 
+
                         <p class="card-note">
+
                             ${
                                 pending
-                                    ? "Remaining meals will match with future hotel stock."
+                                    ? "Remaining requirement will match with the same food from future hotel stock."
                                     : "Complete NGO requirement matched."
                             }
+
                         </p>
+
                     </article>
                 `;
             }).join("");
@@ -1313,7 +1686,9 @@ document.addEventListener("DOMContentLoaded", () => {
        DELIVERY LIST
     ================================================== */
 
-    function renderDeliveryList(deliveries) {
+    function renderDeliveryList(
+        deliveries
+    ) {
         const deliveryList =
             document.getElementById(
                 "deliveryList"
@@ -1334,87 +1709,162 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         deliveryList.innerHTML =
-            deliveries.map((delivery) => {
-                const completed =
-                    delivery.status ===
-                    "COMPLETED";
+            deliveries.map(
+                (delivery) => {
+                    const completed =
+                        [
+                            "COMPLETED",
+                            "DELIVERED"
+                        ].includes(
+                            delivery.status
+                        );
 
-                const allocations =
-                    (
-                        delivery.allocations || []
-                    )
-                        .map(
-                            (allocation) =>
-                                `${escapeHtml(allocation.foodName)}: ${allocation.meals} meals`
-                        )
-                        .join(", ");
+                    const deliveryAllocations =
+                        delivery.allocations ||
+                        [];
 
-                return `
-                    <article class="content-card delivery-card">
-                        <div class="content-card-heading">
-                            <div>
-                                <h3>
-                                    ${escapeHtml(delivery.ngoName)}
-                                </h3>
+                    const allocations =
+                        deliveryAllocations
+                            .map(
+                                (allocation) =>
+                                    `${escapeHtml(
+                                        allocation.foodName
+                                    )}: ${
+                                        Number(
+                                            allocation.quantity ??
+                                            allocation.meals ??
+                                            0
+                                        )
+                                    } meals`
+                            )
+                            .join(", ");
 
-                                <p>
-                                    ${escapeHtml(delivery.area)}
-                                </p>
+                    const totalMeals =
+                        deliveryAllocations.reduce(
+                            (
+                                total,
+                                allocation
+                            ) =>
+                                total +
+                                Number(
+                                    allocation.quantity ??
+                                    allocation.meals ??
+                                    0
+                                ),
+                            0
+                        );
+
+                    return `
+                        <article class="content-card delivery-card">
+
+                            <div class="content-card-heading">
+
+                                <div>
+
+                                    <h3>
+                                        ${escapeHtml(
+                                            delivery.ngoName
+                                        )}
+                                    </h3>
+
+                                    <p>
+                                        ${escapeHtml(
+                                            delivery.area
+                                        )}
+                                    </p>
+
+                                </div>
+
+
+                                <span class="${
+                                    completed
+                                        ? "closed-badge"
+                                        : "status-badge"
+                                }">
+
+                                    ${escapeHtml(
+                                        delivery.status
+                                    )}
+
+                                </span>
+
                             </div>
 
-                            <span class="${
+
+                            <p>
+                                <strong>
+                                    Food:
+                                </strong>
+
+                                ${allocations || "Pending"}
+                            </p>
+
+                            <p>
+                                <strong>
+                                    Total meals:
+                                </strong>
+
+                                ${totalMeals}
+                            </p>
+
+                            <p>
+                                <strong>
+                                    Delivery partner:
+                                </strong>
+
+                                ${escapeHtml(
+                                    delivery.partner
+                                )}
+                            </p>
+
+                            <p>
+                                <strong>
+                                    Pickup token:
+                                </strong>
+
+                                ${escapeHtml(
+                                    delivery.pickupToken
+                                )}
+                            </p>
+
+
+                            ${
                                 completed
-                                    ? "closed-badge"
-                                    : "status-badge"
-                            }">
-                                ${escapeHtml(delivery.status)}
-                            </span>
-                        </div>
+                                    ? `
+                                        <p class="card-note">
+                                            Pickup verified successfully.
+                                        </p>
+                                    `
+                                    : `
+                                        <div class="delivery-actions">
 
-                        <p>
-                            <strong>Food:</strong>
-                            ${allocations || "Pending"}
-                        </p>
+                                            <input
+                                                type="text"
+                                                class="pickup-token-input"
+                                                data-token-for="${escapeHtml(
+                                                    delivery.id
+                                                )}"
+                                                placeholder="Enter pickup OTP"
+                                            >
 
-                        <p>
-                            <strong>Total meals:</strong>
-                            ${delivery.totalMeals}
-                        </p>
+                                            <button
+                                                type="button"
+                                                class="small-button delivery-complete-button"
+                                                data-delivery-id="${escapeHtml(
+                                                    delivery.id
+                                                )}"
+                                            >
+                                                Verify Delivery
+                                            </button>
 
-                        <p>
-                            <strong>Pickup token:</strong>
-                            ${escapeHtml(delivery.pickupToken)}
-                        </p>
+                                        </div>
+                                    `
+                            }
 
-                        ${
-                            completed
-                                ? `
-                                    <p class="card-note">
-                                        Pickup verified successfully.
-                                    </p>
-                                `
-                                : `
-                                    <div class="delivery-actions">
-                                        <input
-                                            type="text"
-                                            class="pickup-token-input"
-                                            data-token-for="${delivery.id}"
-                                            placeholder="Enter pickup OTP"
-                                        >
-
-                                        <button
-                                            type="button"
-                                            class="small-button delivery-complete-button"
-                                            data-delivery-id="${delivery.id}"
-                                        >
-                                            Verify Delivery
-                                        </button>
-                                    </div>
-                                `
-                        }
-                    </article>
-                `;
-            }).join("");
+                        </article>
+                    `;
+                }
+            ).join("");
     }
 
 
@@ -1422,7 +1872,9 @@ document.addEventListener("DOMContentLoaded", () => {
        PUBLIC ALERT LIST
     ================================================== */
 
-    function renderPublicAlerts(alerts) {
+    function renderPublicAlerts(
+        alerts
+    ) {
         const alertList =
             document.getElementById(
                 "publicAlertList"
@@ -1435,7 +1887,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!alerts.length) {
             alertList.innerHTML = `
                 <p class="empty-message">
-                    No public alert issued.
+                    No community alert issued.
                 </p>
             `;
 
@@ -1445,40 +1897,67 @@ document.addEventListener("DOMContentLoaded", () => {
         alertList.innerHTML =
             alerts.map((alert) => `
                 <article class="content-card">
+
                     <div class="content-card-heading">
+
                         <div>
+
                             <h3>
-                                ${escapeHtml(alert.foodName)}
+                                ${escapeHtml(
+                                    alert.foodName
+                                )}
                             </h3>
 
                             <p>
-                                ${escapeHtml(alert.approximateArea)}
+                                ${escapeHtml(
+                                    alert.area
+                                )}
                             </p>
+
                         </div>
 
+
                         <span class="${
-                            alert.status === "CLOSED"
+                            alert.status ===
+                                "CLOSED"
                                 ? "closed-badge"
                                 : "warning-badge"
                         }">
-                            ${escapeHtml(alert.status)}
+
+                            ${escapeHtml(
+                                alert.status
+                            )}
+
                         </span>
+
                     </div>
 
+
                     <p>
-                        <strong>Quantity:</strong>
-                        ${alert.quantity} meals
+                        <strong>
+                            Quantity:
+                        </strong>
+
+                        ${Number(
+                            alert.quantity || 0
+                        )} meals
                     </p>
 
                     <p>
-                        <strong>Pickup deadline:</strong>
-                        ${formatDate(alert.pickupDeadline)}
+                        <strong>
+                            Pickup deadline:
+                        </strong>
+
+                        ${formatDate(
+                            alert.pickupDeadline
+                        )}
                     </p>
 
                     <p class="card-note">
                         Nearby beneficiaries notified through
                         public screen, app and SMS/IVR.
                     </p>
+
                 </article>
             `).join("");
     }
@@ -1512,36 +1991,79 @@ document.addEventListener("DOMContentLoaded", () => {
 
         notificationList.innerHTML =
             notifications
-                .slice()
-                .reverse()
                 .slice(0, 12)
-                .map((notification) => `
-                    <article class="content-card">
-                        <div class="content-card-heading">
-                            <div>
-                                <h3>
-                                    ${escapeHtml(notification.channel)}
-                                    Notification
-                                </h3>
+                .map(
+                    (notification) => `
+                        <article class="content-card">
 
-                                <p>
-                                    ${formatDate(notification.createdAt)}
-                                </p>
+                            <div class="content-card-heading">
+
+                                <div>
+
+                                    <h3>
+                                        ${escapeHtml(
+                                            notification.type ||
+                                            "Update"
+                                        )}
+                                    </h3>
+
+                                    <p>
+                                        ${formatDate(
+                                            notification.createdAt
+                                        )}
+                                    </p>
+
+                                </div>
+
+
+                                <span class="status-badge">
+
+                                    ${escapeHtml(
+                                        notification.channel ||
+                                        "APP"
+                                    )}
+
+                                </span>
+
                             </div>
 
-                            <span class="status-badge">
-                                ${escapeHtml(
-                                    notification.status ||
-                                    "SENT"
-                                )}
-                            </span>
-                        </div>
 
-                        <p>
-                            ${escapeHtml(notification.message)}
-                        </p>
-                    </article>
-                `).join("");
+                            <p>
+                                ${escapeHtml(
+                                    notification.message
+                                )}
+                            </p>
+
+                        </article>
+                    `
+                ).join("");
+    }
+
+
+    /* ==================================================
+       RESPONSE READER
+    ================================================== */
+
+    async function readJsonResponse(
+        response
+    ) {
+        const responseText =
+            await response.text();
+
+        if (!responseText) {
+            return {};
+        }
+
+        try {
+            return JSON.parse(
+                responseText
+            );
+
+        } catch (error) {
+            throw new Error(
+                `Server returned invalid JSON (${response.status}).`
+            );
+        }
     }
 
 
@@ -1584,6 +2106,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
+    function restoreSelectValue(
+        select,
+        oldValue
+    ) {
+        const valueExists = [
+            ...select.options
+        ].some(
+            (option) =>
+                option.value ===
+                oldValue
+        );
+
+        if (valueExists) {
+            select.value =
+                oldValue;
+        }
+    }
+
+
     function setButtonLoading(
         button,
         loading,
@@ -1597,13 +2138,19 @@ document.addEventListener("DOMContentLoaded", () => {
             button.dataset.originalText =
                 button.innerHTML;
 
-            button.disabled = true;
+            button.disabled =
+                true;
+
             button.textContent =
                 loadingText;
-        } else {
-            button.disabled = false;
 
-            if (button.dataset.originalText) {
+        } else {
+            button.disabled =
+                false;
+
+            if (
+                button.dataset.originalText
+            ) {
                 button.innerHTML =
                     button.dataset.originalText;
             }
@@ -1689,7 +2236,13 @@ document.addEventListener("DOMContentLoaded", () => {
             .replaceAll("&", "&amp;")
             .replaceAll("<", "&lt;")
             .replaceAll(">", "&gt;")
-            .replaceAll('"', "&quot;")
-            .replaceAll("'", "&#039;");
+            .replaceAll(
+                '"',
+                "&quot;"
+            )
+            .replaceAll(
+                "'",
+                "&#039;"
+            );
     }
 });
