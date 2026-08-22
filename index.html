@@ -10,104 +10,75 @@
 
     <meta
         name="description"
-        content="RePlate AI food rescue and NGO matching system"
+        content="RePlate AI connects safe surplus food with verified NGOs and nearby communities."
     >
 
-    <title>RePlate AI</title>
+    <title>RePlate AI | Smart Food Rescue</title>
 
     <link
         rel="stylesheet"
-        href="style.css"
+        href="/style.css"
     >
 </head>
 
 <body>
 
-    <!-- ============================================
-         HEADER
-    ============================================= -->
+    <!-- HEADER -->
 
     <header class="main-header">
         <div class="header-container">
 
-            <a
-                href="#home"
-                class="brand"
-            >
-                <div class="brand-icon">
-                    R
-                </div>
+            <a href="#home" class="brand">
+                <div class="brand-icon">R</div>
 
                 <div>
                     <h1>RePlate AI</h1>
-
-                    <p>
-                        Intelligent Food Rescue Network
-                    </p>
+                    <p>Smart Food Rescue Network</p>
                 </div>
             </a>
 
             <nav class="main-navigation">
-                <a href="#restaurant">
-                    Restaurant
-                </a>
-
-                <a href="#stock">
-                    Live Stock
-                </a>
-
-                <a href="#ngo">
-                    NGO
-                </a>
-
-                <a href="#delivery">
-                    Delivery
-                </a>
-
-                <a href="#impact">
-                    Impact
-                </a>
+                <a href="#restaurant">Restaurant</a>
+                <a href="#stock">Stock</a>
+                <a href="#ngo">NGO</a>
+                <a href="#delivery">Delivery</a>
+                <a href="#impact">Impact</a>
             </nav>
 
             <div
                 id="serverStatus"
                 class="server-status"
             >
-                Checking Server...
+                Connecting...
             </div>
 
         </div>
     </header>
 
 
-    <!-- ============================================
-         HERO SECTION
-    ============================================= -->
-
     <main>
 
-        <section
-            id="home"
-            class="hero-section"
-        >
+        <!-- HERO -->
+
+        <section id="home" class="hero-section">
             <div class="hero-container">
 
                 <div class="hero-content">
+
                     <span class="hero-label">
-                        AI-POWERED FOOD RESCUE
+                        SMART FOOD RESCUE
                     </span>
 
                     <h2>
-                        Turn surplus food into
-                        <span>meals that matter.</span>
+                        Rescue surplus food
+                        <span>before it becomes waste.</span>
                     </h2>
 
                     <p>
-                        RePlate AI verifies surplus food,
-                        adds safe meals to live stock,
-                        matches the highest-priority NGO
-                        and automatically escalates
-                        unclaimed food to nearby communities.
+                        RePlate AI helps restaurants verify surplus
+                        food, manage live stock and match available
+                        meals with verified NGOs based on urgency
+                        and need.
                     </p>
 
                     <div class="hero-actions">
@@ -125,24 +96,21 @@
                             View Live Stock
                         </a>
                     </div>
+
                 </div>
 
-                <div class="hero-flow-card">
-                    <h3>
-                        Smart Rescue Flow
-                    </h3>
+
+                <aside class="hero-flow-card">
+
+                    <h3>How RePlate AI Works</h3>
 
                     <div class="flow-step">
                         <span>1</span>
 
                         <div>
-                            <strong>
-                                Restaurant Submission
-                            </strong>
-
+                            <strong>Food Submission</strong>
                             <p>
-                                Food details and safety
-                                verification
+                                Restaurant adds food and pickup details.
                             </p>
                         </div>
                     </div>
@@ -151,12 +119,9 @@
                         <span>2</span>
 
                         <div>
-                            <strong>
-                                Live Stock
-                            </strong>
-
+                            <strong>Safety Verification</strong>
                             <p>
-                                Safe meals added automatically
+                                Food enters stock after mandatory checks.
                             </p>
                         </div>
                     </div>
@@ -165,12 +130,9 @@
                         <span>3</span>
 
                         <div>
-                            <strong>
-                                NGO Matching
-                            </strong>
-
+                            <strong>Smart Matching</strong>
                             <p>
-                                Priority-based automatic matching
+                                Available meals match with priority NGOs.
                             </p>
                         </div>
                     </div>
@@ -179,89 +141,57 @@
                         <span>4</span>
 
                         <div>
-                            <strong>
-                                Verified Delivery
-                            </strong>
-
+                            <strong>Verified Pickup</strong>
                             <p>
-                                Pickup OTP and impact tracking
+                                OTP verification completes the rescue.
                             </p>
                         </div>
                     </div>
-                </div>
+
+                </aside>
 
             </div>
         </section>
 
 
-        <!-- ========================================
-             LIVE METRICS
-        ========================================= -->
+        <!-- METRICS -->
 
         <section class="metrics-section">
             <div class="metrics-grid">
 
                 <article class="metric-card">
-                    <span class="metric-icon">
-                        🍱
-                    </span>
+                    <span class="metric-icon">🍱</span>
 
                     <div>
-                        <strong id="availableMeals">
-                            0
-                        </strong>
-
-                        <p>
-                            Available Meals
-                        </p>
+                        <strong id="availableMeals">0</strong>
+                        <p>Meals Available</p>
                     </div>
                 </article>
 
                 <article class="metric-card">
-                    <span class="metric-icon">
-                        🤝
-                    </span>
+                    <span class="metric-icon">🤝</span>
 
                     <div>
-                        <strong id="pendingNeed">
-                            0
-                        </strong>
-
-                        <p>
-                            Pending NGO Need
-                        </p>
+                        <strong id="pendingNeed">0</strong>
+                        <p>Meals Required</p>
                     </div>
                 </article>
 
                 <article class="metric-card">
-                    <span class="metric-icon">
-                        🚚
-                    </span>
+                    <span class="metric-icon">🚚</span>
 
                     <div>
-                        <strong id="activeDeliveries">
-                            0
-                        </strong>
-
-                        <p>
-                            Active Deliveries
-                        </p>
+                        <strong id="activeDeliveries">0</strong>
+                        <p>Active Pickups</p>
                     </div>
                 </article>
 
                 <article class="metric-card">
-                    <span class="metric-icon">
-                        📢
-                    </span>
+                    <span class="metric-icon">📢</span>
 
                     <div>
-                        <strong id="publicAlertCount">
-                            0
-                        </strong>
-
-                        <p>
-                            Public Alerts
-                        </p>
+                        <strong id="publicAlertCount">0</strong>
+                        <p>Community Alerts</p>
                     </div>
                 </article>
 
@@ -269,77 +199,59 @@
         </section>
 
 
-        <!-- ========================================
-             RESTAURANT FOOD FORM
-        ========================================= -->
+        <!-- RESTAURANT DASHBOARD -->
 
-        <section
-            id="restaurant"
-            class="section"
-        >
+        <section id="restaurant" class="section">
+
             <div class="section-heading">
                 <span class="section-label">
                     RESTAURANT DASHBOARD
                 </span>
 
-                <h2>
-                    Add Safe Surplus Food
-                </h2>
+                <h2>Add Surplus Food</h2>
 
                 <p>
-                    Enter complete food and safety details.
-                    Food will enter live stock only after all
-                    mandatory checks are completed.
+                    Enter accurate food, safety and pickup details.
+                    Verified food will be added to the live stock.
                 </p>
             </div>
 
+
             <div class="dashboard-layout">
 
-                <form
-                    id="foodForm"
-                    class="premium-form"
-                >
+                <form id="foodForm" class="premium-form">
 
-                    <!-- Restaurant details -->
+                    <!-- Provider Information -->
 
                     <div class="form-section">
+
                         <div class="form-section-heading">
                             <span>01</span>
 
                             <div>
-                                <h3>
-                                    Restaurant Details
-                                </h3>
-
-                                <p>
-                                    Identify the food provider
-                                </p>
+                                <h3>Provider Information</h3>
+                                <p>Details of the food provider</p>
                             </div>
                         </div>
+
 
                         <div class="form-grid">
 
                             <div class="form-group">
                                 <label for="restaurantName">
-                                    Restaurant/Hotel Name
+                                    Restaurant or Hotel Name
                                 </label>
 
                                 <input
                                     type="text"
                                     id="restaurantName"
-                                    placeholder="Example: Green Palace Hotel"
+                                    placeholder="Green Palace Hotel"
                                     required
                                 >
                             </div>
 
+
                             <div class="form-group">
-                              
-
-                               
-                                
-                            </div>
-
-                            <div class="form-group full-width">
                                 <label for="restaurantPhone">
                                     Contact Number
                                 </label>
@@ -347,7 +259,7 @@
                                 <input
                                     type="tel"
                                     id="restaurantPhone"
-                                    placeholder="Example: 9876543210"
+                                    placeholder="9876543210"
                                     inputmode="numeric"
                                     minlength="10"
                                     maxlength="15"
@@ -359,22 +271,19 @@
                     </div>
 
 
-                    <!-- Food photo -->
+                    <!-- Food Photo -->
 
                     <div class="form-section">
+
                         <div class="form-section-heading">
                             <span>02</span>
 
                             <div>
-                                <h3>
-                                    Food Photo
-                                </h3>
-
-                                <p>
-                                    Used for verification and NGO alert
-                                </p>
+                                <h3>Food Verification Photo</h3>
+                                <p>Add a clear and recent photo</p>
                             </div>
                         </div>
+
 
                         <div class="photo-upload-area">
 
@@ -382,16 +291,14 @@
                                 for="foodPhoto"
                                 class="photo-upload-label"
                             >
-                                <div class="camera-icon">
-                                    📷
-                                </div>
+                                <div class="camera-icon">📷</div>
 
                                 <strong id="photoLabel">
-                                    Choose or capture food photo
+                                    Choose or capture a food photo
                                 </strong>
 
                                 <small>
-                                    JPG, PNG or WebP • Maximum 2.5 MB
+                                    JPG, PNG or WebP • Maximum 10 MB
                                 </small>
 
                                 <input
@@ -403,44 +310,46 @@
                                 >
                             </label>
 
+
                             <img
                                 id="foodPreview"
                                 class="food-preview hidden"
-                                alt="Selected food preview"
+                                alt="Food photo preview"
                             >
+
 
                             <button
                                 type="button"
                                 id="resetPhotoButton"
                                 class="small-button remove-photo-button"
                             >
-                                🗑️ Remove Selected Photo
+                                Remove Selected Photo
                             </button>
 
+
                             <p class="photo-information">
-                                
+                                The photo is used for NGO verification.
+                                Live stock displays only the food name
+                                and available quantity.
                             </p>
 
                         </div>
                     </div>
 
 
-                    <!-- Food details -->
+                    <!-- Food Information -->
 
                     <div class="form-section">
+
                         <div class="form-section-heading">
                             <span>03</span>
 
                             <div>
-                                <h3>
-                                    Food Details
-                                </h3>
-
-                                <p>
-                                    Tell us what food is available
-                                </p>
+                                <h3>Food Information</h3>
+                                <p>Describe the available food</p>
                             </div>
                         </div>
+
 
                         <div class="form-grid">
 
@@ -470,7 +379,7 @@
                                     </option>
 
                                     <option value="Bread">
-                                        Bread/Roti
+                                        Bread or Roti
                                     </option>
 
                                     <option value="Vegetables">
@@ -491,6 +400,7 @@
                                 </select>
                             </div>
 
+
                             <div class="form-group">
                                 <label for="foodName">
                                     Food Name
@@ -499,29 +409,31 @@
                                 <input
                                     type="text"
                                     id="foodName"
-                                    placeholder="Example: Veg Biryani"
+                                    placeholder="Veg Biryani"
                                     required
                                 >
                             </div>
 
+
                             <div class="form-group">
                                 <label for="foodQuantity">
-                                    Available Quantity
+                                    Available Meals
                                 </label>
 
                                 <input
                                     type="number"
                                     id="foodQuantity"
-                                    placeholder="Number of meals"
+                                    placeholder="50"
                                     min="1"
                                     max="10000"
                                     required
                                 >
                             </div>
 
+
                             <div class="form-group">
                                 <label for="preparedAt">
-                                    Preparation Date and Time
+                                    Prepared At
                                 </label>
 
                                 <input
@@ -535,22 +447,19 @@
                     </div>
 
 
-                    <!-- Safety conditions -->
+                    <!-- Food Condition -->
 
                     <div class="form-section">
+
                         <div class="form-section-heading">
                             <span>04</span>
 
                             <div>
-                                <h3>
-                                    Storage and Safety Details
-                                </h3>
-
-                                <p>
-                                    Required for demo safety analysis
-                                </p>
+                                <h3>Food Condition</h3>
+                                <p>Add current storage details</p>
                             </div>
                         </div>
+
 
                         <div class="form-grid">
 
@@ -562,13 +471,14 @@
                                 <input
                                     type="number"
                                     id="temperature"
-                                    placeholder="Example: 5"
+                                    placeholder="5"
                                     min="-20"
                                     max="100"
                                     step="0.1"
                                     required
                                 >
                             </div>
+
 
                             <div class="form-group">
                                 <label for="storage">
@@ -596,7 +506,7 @@
                                     </option>
 
                                     <option value="Freezer">
-                                        Freezer
+                                        Frozen
                                     </option>
 
                                     <option value="Not Measured">
@@ -604,6 +514,7 @@
                                     </option>
                                 </select>
                             </div>
+
 
                             <div class="form-group">
                                 <label for="packaging">
@@ -636,42 +547,47 @@
                                 </select>
                             </div>
 
+
                             <div class="form-group">
                                 <label for="rescueWindow">
-                                    Rescue Window (Minutes)
+                                    NGO Response Window
                                 </label>
 
-                                <input
-                                    type="number"
+                                <select
                                     id="rescueWindow"
-                                    value="10"
-                                    min="1"
-                                    max="180"
                                     required
                                 >
+                                    <option value="10">
+                                        10 Minutes
+                                    </option>
+
+                                    <option value="20">
+                                        20 Minutes
+                                    </option>
+
+                                    <option value="30">
+                                        30 Minutes
+                                    </option>
+                                </select>
                             </div>
 
                         </div>
                     </div>
 
 
-                    <!-- Pickup information -->
+                    <!-- Pickup Details -->
 
                     <div class="form-section">
+
                         <div class="form-section-heading">
                             <span>05</span>
 
                             <div>
-                                <h3>
-                                    Pickup Information
-                                </h3>
-
-                                <p>
-                                    Approximate area is shown first;
-                                    exact location is shared after claim
-                                </p>
+                                <h3>Pickup Details</h3>
+                                <p>Information required for collection</p>
                             </div>
                         </div>
+
 
                         <div class="form-grid">
 
@@ -683,23 +599,25 @@
                                 <input
                                     type="text"
                                     id="foodArea"
-                                    placeholder="Example: Boring Road, Patna"
+                                    placeholder="Boring Road, Patna"
                                     required
                                 >
                             </div>
 
+
                             <div class="form-group">
                                 <label for="exactLocation">
-                                    Exact Pickup Location
+                                    Exact Pickup Address
                                 </label>
 
                                 <input
                                     type="text"
                                     id="exactLocation"
-                                    placeholder="Full address or landmark"
+                                    placeholder="Enter complete address"
                                     required
                                 >
                             </div>
+
 
                             <div class="form-group full-width">
                                 <label for="pickupDeadline">
@@ -717,22 +635,19 @@
                     </div>
 
 
-                    <!-- Mandatory checklist -->
+                    <!-- Safety Verification -->
 
                     <div class="form-section">
+
                         <div class="form-section-heading">
                             <span>06</span>
 
                             <div>
-                                <h3>
-                                    Mandatory Safety Checklist
-                                </h3>
-
-                                <p>
-                                    Every confirmation is required
-                                </p>
+                                <h3>Safety Verification</h3>
+                                <p>All checks are mandatory</p>
                             </div>
                         </div>
+
 
                         <div class="safety-checklist">
 
@@ -744,13 +659,14 @@
 
                                 <span>
                                     <strong>
-                                        Freshness Check
+                                        Freshness Verified
                                     </strong>
 
-                                    Food has no unusual smell,
-                                    colour or visible contamination.
+                                    No unusual smell, colour or
+                                    visible contamination.
                                 </span>
                             </label>
+
 
                             <label class="safety-item">
                                 <input
@@ -760,13 +676,14 @@
 
                                 <span>
                                     <strong>
-                                        Temperature Check
+                                        Temperature Recorded
                                     </strong>
 
-                                    Current food temperature has
-                                    been measured correctly.
+                                    Current temperature has been
+                                    measured correctly.
                                 </span>
                             </label>
+
 
                             <label class="safety-item">
                                 <input
@@ -776,13 +693,14 @@
 
                                 <span>
                                     <strong>
-                                        Hygiene Check
+                                        Hygiene Confirmed
                                     </strong>
 
-                                    Food was handled with clean
-                                    utensils and hygienic practices.
+                                    Food was handled using clean
+                                    utensils and surfaces.
                                 </span>
                             </label>
+
 
                             <label class="safety-item">
                                 <input
@@ -792,20 +710,23 @@
 
                                 <span>
                                     <strong>
-                                        Packaging Check
+                                        Packaging Verified
                                     </strong>
 
-                                    Packaging is clean, secure
-                                    and suitable for transportation.
+                                    Food is securely packed for
+                                    safe transportation.
                                 </span>
                             </label>
 
                         </div>
 
+
                         <p class="safety-warning">
-                            This is a competition demo and does not
-                            replace professional food-safety inspection.
+                            This demonstration supports rescue decisions
+                            but does not replace professional food-safety
+                            inspection.
                         </p>
+
                     </div>
 
 
@@ -813,8 +734,9 @@
                         type="submit"
                         class="primary-button submit-button"
                     >
-                        ✓ Run Safety Check & Add to Stock
+                        Verify Food & Add to Stock
                     </button>
+
 
                     <div
                         id="foodResult"
@@ -825,146 +747,136 @@
                 </form>
 
 
-                <!-- Restaurant process card -->
+                <!-- AUTOMATED WORKFLOW -->
 
                 <aside class="information-panel">
+
                     <span class="information-label">
-                        AUTOMATED PROCESS
+                        AUTOMATED WORKFLOW
                     </span>
 
-                    <h3>
-                        What happens after submission?
-                    </h3>
+                    <h3>What happens next?</h3>
+
 
                     <div class="information-step">
                         <span>✓</span>
 
                         <div>
-                            <strong>
-                                Safety verification
-                            </strong>
-
+                            <strong>Safety Decision</strong>
                             <p>
-                                Unsafe or damaged food is rejected.
+                                Unsafe food is blocked from the system.
                             </p>
                         </div>
                     </div>
+
 
                     <div class="information-step">
                         <span>✓</span>
 
                         <div>
-                            <strong>
-                                Stock update
-                            </strong>
-
+                            <strong>Live Stock Update</strong>
                             <p>
-                                Food name and quantity enter live stock.
+                                Verified meals are added to inventory.
                             </p>
                         </div>
                     </div>
+
 
                     <div class="information-step">
                         <span>✓</span>
 
                         <div>
-                            <strong>
-                                Priority NGO search
-                            </strong>
-
+                            <strong>Priority Matching</strong>
                             <p>
-                                AI demo matches the NGO with higher need.
+                                Higher-need NGOs receive priority alerts.
                             </p>
                         </div>
                     </div>
+
 
                     <div class="information-step">
                         <span>✓</span>
 
                         <div>
-                            <strong>
-                                Public escalation
-                            </strong>
-
+                            <strong>Automatic Escalation</strong>
                             <p>
-                                Unclaimed meals can be announced
-                                through public screens and SMS/IVR.
+                                Unclaimed meals reach nearby communities.
                             </p>
                         </div>
                     </div>
+
                 </aside>
 
             </div>
         </section>
 
 
-        <!-- ========================================
-             LIVE STOCK
-        ========================================= -->
+        <!-- LIVE STOCK -->
 
         <section
             id="stock"
             class="section alternate-section"
         >
+
             <div class="section-heading section-heading-row">
+
                 <div>
                     <span class="section-label">
                         REAL-TIME INVENTORY
                     </span>
 
-                    <h2>
-                        Live Food Stock
-                    </h2>
+                    <h2>Live Food Stock</h2>
 
                     <p>
-                        Stock shows only food name and
-                        currently available quantity.
+                        Current food name and quantity available
+                        for NGO matching.
                     </p>
                 </div>
+
 
                 <button
                     type="button"
                     id="refreshButton"
                     class="secondary-button"
                 >
-                    ↻ Refresh Stock
+                    Refresh Stock
                 </button>
+
             </div>
+
 
             <div
                 id="foodList"
                 class="content-list"
             >
                 <p class="empty-message">
-                    Loading food stock...
+                    No food is currently available.
                 </p>
             </div>
+
         </section>
 
 
-        <!-- ========================================
-             NGO DASHBOARD
-        ========================================= -->
+        <!-- NGO DASHBOARD -->
 
-        <section
-            id="ngo"
-            class="section"
-        >
+        <section id="ngo" class="section">
+
             <div class="section-heading">
+
                 <span class="section-label">
                     NGO DASHBOARD
                 </span>
 
-                <h2>
-                    Request and Match Food
-                </h2>
+                <h2>Request Available Meals</h2>
 
                 <p>
-                    NGO enters the required meals.
-                    Available stock is allocated automatically,
-                    and unmatched need remains open for future stock.
+                    Enter the required quantity. Available stock
+                    will be matched automatically, while remaining
+                    need stays open for future donations.
                 </p>
+
             </div>
+
 
             <div class="dashboard-layout">
 
@@ -972,23 +884,20 @@
                     id="ngoOrderForm"
                     class="premium-form compact-form"
                 >
+
                     <div class="form-section-heading">
                         <span>NGO</span>
 
                         <div>
-                            <h3>
-                                Create Food Request
-                            </h3>
-
-                            <p>
-                                Select NGO and required capacity
-                            </p>
+                            <h3>Create Meal Request</h3>
+                            <p>Request according to actual capacity</p>
                         </div>
                     </div>
 
+
                     <div class="form-group">
                         <label for="ngoSelect">
-                            Verified NGO/Community Kitchen
+                            Verified Organisation
                         </label>
 
                         <select
@@ -996,63 +905,66 @@
                             required
                         >
                             <option value="">
-                                Loading verified NGOs...
+                                Loading organisations...
                             </option>
                         </select>
                     </div>
 
+
                     <div class="form-group">
                         <label for="requiredMeals">
-                            Required Meals
+                            Meals Required
                         </label>
 
                         <input
                             type="number"
                             id="requiredMeals"
-                            placeholder="Example: 50"
+                            placeholder="50"
                             min="1"
                             max="10000"
                             required
                         >
                     </div>
 
+
                     <button
                         type="submit"
                         class="primary-button submit-button"
                     >
-                        🤝 Match Available Food
+                        Match Available Food
                     </button>
+
 
                     <div
                         id="ngoOrderResult"
                         class="form-result"
                         aria-live="polite"
                     ></div>
+
                 </form>
 
 
-                <!-- Public alert escalation -->
+                <!-- Community Escalation -->
 
                 <div class="premium-form compact-form">
+
                     <div class="form-section-heading">
                         <span>10m</span>
 
                         <div>
-                            <h3>
-                                Public Alert Escalation
-                            </h3>
-
-                            <p>
-                                Demo of no-response escalation
-                            </p>
+                            <h3>Community Escalation</h3>
+                            <p>Use when NGOs do not respond</p>
                         </div>
                     </div>
 
+
                     <p class="panel-description">
-                        If verified NGOs do not need or accept
-                        the food within the rescue window,
-                        issue a nearby public alert.
+                        If no verified NGO accepts the food within
+                        the response window, the alert can be shared
+                        with nearby beneficiaries and community
+                        pickup points.
                     </p>
+
 
                     <div class="form-group">
                         <label for="escalateFoodSelect">
@@ -1066,221 +978,220 @@
                         </select>
                     </div>
 
+
                     <button
                         type="button"
                         id="escalateButton"
                         class="warning-button"
                     >
-                        📢 Simulate Public Alert
+                        Send Community Alert
                     </button>
+
                 </div>
 
             </div>
 
 
             <div class="dashboard-content-section">
-                <div class="subsection-heading">
-                    <div>
-                        <span class="section-label">
-                            REQUEST QUEUE
-                        </span>
 
-                        <h3>
-                            NGO Food Requests
-                        </h3>
-                    </div>
+                <div class="subsection-heading">
+                    <span class="section-label">
+                        REQUEST STATUS
+                    </span>
+
+                    <h3>NGO Meal Requests</h3>
                 </div>
+
 
                 <div
                     id="orderList"
                     class="content-list"
                 >
                     <p class="empty-message">
-                        No NGO request yet.
+                        No meal request has been submitted.
                     </p>
                 </div>
+
             </div>
         </section>
 
 
-        <!-- ========================================
-             DELIVERY VERIFICATION
-        ========================================= -->
+        <!-- DELIVERY -->
 
         <section
             id="delivery"
             class="section delivery-section"
         >
+
             <div class="section-heading light-heading">
+
                 <span class="section-label">
-                    SECURE LOGISTICS
+                    SECURE PICKUP
                 </span>
 
-                <h2>
-                    Pickup and Delivery Verification
-                </h2>
+                <h2>Delivery Verification</h2>
 
                 <p>
-                    The volunteer enters the pickup token
-                    to confirm collection and close the rescue.
+                    The assigned volunteer verifies collection
+                    using the secure pickup token.
                 </p>
+
             </div>
+
 
             <div
                 id="deliveryList"
                 class="content-list"
             >
                 <p class="empty-message dark-empty">
-                    No delivery assigned yet.
+                    No pickup is currently assigned.
                 </p>
             </div>
+
         </section>
 
 
-        <!-- ========================================
-             PUBLIC ALERTS
-        ========================================= -->
+        <!-- COMMUNITY ALERTS -->
 
         <section
             id="public-alerts"
             class="section alternate-section"
         >
+
             <div class="section-heading">
+
                 <span class="section-label">
                     COMMUNITY ACCESS
                 </span>
 
-                <h2>
-                    Public Screen and Beneficiary Alerts
-                </h2>
+                <h2>Community Food Alerts</h2>
 
                 <p>
-                    Public alerts show meal quantity,
+                    Alerts display available quantity,
                     approximate area and pickup deadline.
-                    Exact location is provided only after claim.
+                    Exact location is shared after a valid claim.
                 </p>
+
             </div>
+
 
             <div
                 id="publicAlertList"
                 class="content-list"
             >
                 <p class="empty-message">
-                    No public alert issued.
+                    No community alert is currently active.
                 </p>
             </div>
+
         </section>
 
 
-        <!-- ========================================
-             NOTIFICATION CENTRE
-        ========================================= -->
+        <!-- NOTIFICATIONS -->
 
         <section
             id="notifications"
             class="section"
         >
+
             <div class="section-heading">
+
                 <span class="section-label">
-                    LIVE COMMUNICATION
+                    LIVE UPDATES
                 </span>
 
-                <h2>
-                    Notification Centre
-                </h2>
+                <h2>Notification Centre</h2>
 
                 <p>
-                    Demo notifications represent application
-                    alerts, SMS/IVR messages and volunteer updates.
+                    Track restaurant submissions, NGO matches,
+                    community alerts and pickup updates.
                 </p>
+
             </div>
+
 
             <div
                 id="notificationList"
                 class="content-list"
             >
                 <p class="empty-message">
-                    No notifications yet.
+                    No notification is available.
                 </p>
             </div>
+
         </section>
 
 
-        <!-- ========================================
-             IMPACT SECTION
-        ========================================= -->
+        <!-- IMPACT -->
 
         <section
             id="impact"
             class="section impact-section"
         >
+
             <div class="section-heading">
+
                 <span class="section-label">
                     MEASURABLE IMPACT
                 </span>
 
-                <h2>
-                    Why RePlate AI Can Work
-                </h2>
+                <h2>A Complete Rescue Workflow</h2>
 
                 <p>
-                    One connected workflow reduces response
-                    delays, improves stock visibility and
-                    records every completed rescue.
+                    RePlate AI connects food providers,
+                    verified organisations, volunteers and
+                    nearby communities through one system.
                 </p>
+
             </div>
+
 
             <div class="impact-grid">
 
                 <article class="impact-card">
                     <span>⚡</span>
 
-                    <h3>
-                        Faster Matching
-                    </h3>
+                    <h3>Faster Response</h3>
 
                     <p>
-                        Nearby verified organisations are
-                        prioritised by current meal requirement.
+                        Priority alerts reduce the time needed
+                        to find a suitable recipient.
                     </p>
                 </article>
+
 
                 <article class="impact-card">
                     <span>📦</span>
 
-                    <h3>
-                        Live Stock Control
-                    </h3>
+                    <h3>Accurate Stock</h3>
 
                     <p>
-                        Claimed meals reduce stock automatically
-                        and zero stock closes the alert.
+                        Claimed meals reduce available quantity
+                        automatically.
                     </p>
                 </article>
+
 
                 <article class="impact-card">
                     <span>🔄</span>
 
-                    <h3>
-                        Future Auto-Matching
-                    </h3>
+                    <h3>Future Matching</h3>
 
                     <p>
-                        Pending NGO demand can match automatically
-                        when another hotel submits food.
+                        Unfulfilled NGO demand can match with
+                        another restaurant's food.
                     </p>
                 </article>
+
 
                 <article class="impact-card">
                     <span>📱</span>
 
-                    <h3>
-                        Inclusive Access
-                    </h3>
+                    <h3>Inclusive Access</h3>
 
                     <p>
-                        App, volunteer, public screen,
-                        SMS/IVR and pickup-point support.
+                        App, SMS/IVR, volunteers and community
+                        pickup points improve accessibility.
                     </p>
                 </article>
 
@@ -1288,82 +1199,53 @@
         </section>
 
 
-        <!-- ========================================
-             TEAM
-        ========================================= -->
+        <!-- PROJECT TEAM -->
 
         <section class="section alternate-section">
+
             <div class="section-heading">
+
                 <span class="section-label">
-                    PROJECT TEAM
+                    OUR TEAM
                 </span>
 
-                <h2>
-                    Team RePlate AI
-                </h2>
+                <h2>Team RePlate AI</h2>
 
                 <p>
-                    Building a practical technology-assisted
-                    food rescue network.
+                    Building a practical and scalable
+                    food rescue system.
                 </p>
+
             </div>
+
 
             <div class="team-grid">
 
                 <article class="team-card">
-                    <div class="team-avatar">
-                        KK
-                    </div>
-
-                    <h3>
-                        Krishna Kumar
-                    </h3>
-
-                    <p>
-                        Team Member
-                    </p>
+                    <div class="team-avatar">KK</div>
+                    <h3>Krishna Kumar</h3>
+                    <p>Team Member</p>
                 </article>
 
+
                 <article class="team-card">
-                    <div class="team-avatar">
-                        RS
-                    </div>
-
-                    <h3>
-                        Roshni Sharma
-                    </h3>
-
-                    <p>
-                        Team Member
-                    </p>
+                    <div class="team-avatar">RS</div>
+                    <h3>Roshni Sharma</h3>
+                    <p>Team Member</p>
                 </article>
 
+
                 <article class="team-card">
-                    <div class="team-avatar">
-                        SK
-                    </div>
-
-                    <h3>
-                        Shubham Kumar
-                    </h3>
-
-                    <p>
-                        Team Member
-                    </p>
+                    <div class="team-avatar">SK</div>
+                    <h3>Shubham Kumar</h3>
+                    <p>Team Member</p>
                 </article>
 
+
                 <article class="team-card">
-                    <div class="team-avatar">
-                        AK
-                    </div>
-
-                    <h3>
-                        Aditya Kumar
-                    </h3>
-
-                    <p>
-                        Team Member
-                    </p>
+                    <div class="team-avatar">AK</div>
+                    <h3>Aditya Kumar</h3>
+                    <p>Team Member</p>
                 </article>
 
             </div>
@@ -1372,28 +1254,24 @@
     </main>
 
 
-    <!-- ============================================
-         FOOTER
-    ============================================= -->
+    <!-- FOOTER -->
 
     <footer class="main-footer">
+
         <div>
-            <h2>
-                RePlate AI
-            </h2>
+            <h2>RePlate AI</h2>
 
             <p>
-                Rescue food. Serve people. Reduce waste.
+                Rescue food. Reduce waste. Serve communities.
             </p>
         </div>
 
         <p>
-            Competition demonstration system
+            Smart Food Rescue Demonstration
         </p>
+
     </footer>
 
-
-    <!-- Toast message -->
 
     <div
         id="toast"
@@ -1403,9 +1281,7 @@
     ></div>
 
 
-    <!-- JavaScript -->
-
-    <script src="app.js"></script>
+    <script src="/app.js"></script>
 
 </body>
 </html>
