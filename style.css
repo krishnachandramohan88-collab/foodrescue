@@ -2,7 +2,7 @@
     --green: #155f43;
     --green-dark: #0b2e22;
     --green-light: #27825e;
-    --background: #f1f6f2;
+    --background: #f5f6f8;
     --white: #ffffff;
     --gold: #e3b85f;
     --text: #14251d;
@@ -26,25 +26,20 @@ html {
 }
 body {
     min-height: 100vh;
-    margin: 10;
+    margin: 0;
     color: var(--text);
     background:
         radial-gradient(
-            circle at 8% 5%,
-            rgba(39, 130, 94, 0.12),
-            transparent 30%
+            circle at 5% 0%,
+            rgba(21, 95, 67, 0.08),
+            transparent 25%
         ),
         radial-gradient(
-            circle at 92% 12%,
-            rgba(227, 184, 95, 0.13),
-            transparent 28%
+            circle at 100% 10%,
+            rgba(227, 184, 95, 0.10),
+            transparent 22%
         ),
-        linear-gradient(
-            180deg,
-            #f8fbf9 0%,
-            #edf4ef 100%
-        );
-    background-attachment: fixed;
+        #f5f6f8;
     font-family:
         Inter,
         system-ui,
