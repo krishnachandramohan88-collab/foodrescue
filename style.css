@@ -11,7 +11,7 @@
     --accent-dark: #c88716;
     --accent-soft: #fff6df;
 
-    --page-background: #f5f7f6;
+    --page-background: #11d462;
     --white: #ffffff;
     --surface-soft: #f8faf9;
 
@@ -47,7 +47,7 @@ html {
 
 body {
     min-height: 100vh;
-    margin: 0;
+    margin: 10;
     color: var(--text);
     background: var(--page-background);
     font-family:
@@ -89,7 +89,7 @@ img {
 .site-header {
     position: sticky;
     z-index: 100;
-    top: 0;
+    top: 10;
 
     display: flex;
     min-height: 76px;
