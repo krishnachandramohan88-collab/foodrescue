@@ -24,6 +24,14 @@ const MAX_REQUEST_SIZE =
     20 * 1024 * 1024;
 
 
+const PUBLIC_FILES = new Set([
+    "index.html",
+    "style.css",
+    "app.js",
+    "logo.svg"
+]);
+
+
 const CONTENT_TYPES = {
     ".html": "text/html; charset=utf-8",
     ".css": "text/css; charset=utf-8",
@@ -1742,12 +1750,18 @@ const server =
                     );
 
                 const safePath =
-                    filePath ===
-                        indexFile ||
+                    PUBLIC_FILES.has(
+                        requestedFile
+                    ) &&
 
-                    filePath.startsWith(
-                        PUBLIC_DIR +
-                        path.sep
+                    (
+                        filePath ===
+                            indexFile ||
+
+                        filePath.startsWith(
+                            PUBLIC_DIR +
+                            path.sep
+                        )
                     );
 
                 if (!safePath) {
