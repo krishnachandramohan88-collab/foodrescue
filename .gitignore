@@ -30,3 +30,9 @@ build/
 
 # Local database backup
 data/*.backup.json
+
+# Runtime demo data
+store.json
+store-backup.json
+data/store.json
+data/store-backup.json
