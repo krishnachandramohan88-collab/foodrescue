@@ -6,8 +6,10 @@ const crypto = require("crypto");
 const PORT =
     Number(process.env.PORT) || 5000;
 
+// GitHub Pages keeps frontend assets in the repository root.
+// Serving from the same directory also lets Railway host the complete app.
 const PUBLIC_DIR =
-    path.join(__dirname, "public");
+    __dirname;
 
 const DATA_DIR =
     path.join(__dirname, "data");
